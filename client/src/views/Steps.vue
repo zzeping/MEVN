@@ -27,7 +27,7 @@
                 </v-stepper-content>
 
                 <v-stepper-content step="3">
-                    <StepThree :next="nextStep" :formData="formData"/>
+                    <StepThree :next="nextStep" :previous="previousStep" :formData="formData"/>
                 </v-stepper-content>
 
                 <v-stepper-content step="4">

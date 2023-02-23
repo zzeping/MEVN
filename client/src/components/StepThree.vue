@@ -10,19 +10,23 @@
             Continue
         </v-btn>
 
-        <v-btn text>Back</v-btn>
+        <v-btn text @click="previousStep">Back</v-btn>
     </div>
 </template>
 
 <script>
 export default {
     props: {
-        next: Function
+        next: Function,
+        previous: Function,
     },
     methods: {
         nextStep() {
             this.next();
-        }
+        },
+        previousStep() {
+            this.previous();
+        },
     }
 }
 </script>
