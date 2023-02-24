@@ -13,7 +13,7 @@
               mdi-plus-circle
             </v-icon>
           </v-btn>
-          <v-btn class="ma-2 white--text" rounded color="#0f6e2f">
+          <v-btn class="ma-2 white--text" rounded color="#0f6e2f" href="/steps">
             upload measurement
             <v-icon right dark>
               mdi-cloud-upload
