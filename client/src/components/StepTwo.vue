@@ -123,13 +123,27 @@ export default {
 
             svg1.append('g')
                 .attr('transform', `translate(0, ${height})`)
-                .call(xAxis);
+                .call(xAxis)
+                .append("text")
+                .style("fill", "black")
+                .attr('text-anchor', 'end')
+                .attr('x', width) 
+                .attr('y', margin.bottom - 3) 
+                .text('Time (ms)');
+                
             svg1.append('g')
                 .call(yAxis1)
+                .append("text")
+                .attr("text-anchor", "end")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left + 20)
+                .attr("x", -margin.top)
+                .attr("fill", "black")
+                .text("Torque (N*m)");
             svg1.append('path')
                 .datum(this.torques)
                 .attr('fill', 'none')
-                .attr('stroke', 'steelblue')
+                .attr('stroke', '#0f6e2f')
                 .attr('stroke-width', 1.5)
                 .attr('d', d3.line()
                     .x((d, i) => x(this.times[i]))
@@ -137,13 +151,27 @@ export default {
                 );
             svg2.append('g')
                 .attr('transform', `translate(0, ${height})`)
-                .call(xAxis);
+                .call(xAxis)
+                .append("text")
+                .attr('text-anchor', 'end')
+                .attr('x', width) 
+                .attr('y', margin.bottom - 3) 
+                .style("fill", "black")
+                .text('Time (ms)');
+
             svg2.append('g')
                 .call(yAxis2)
+                .append("text")
+                .attr("text-anchor", "end")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left + 20)
+                .attr("x", -margin.top)
+                .attr("fill", "black")
+                .text("Angle (Degrees)");
             svg2.append('path')
                 .datum(this.posAnats)
                 .attr('fill', 'none')
-                .attr('stroke', 'steelblue')
+                .attr('stroke', '#0f6e2f')
                 .attr('stroke-width', 1.5)
                 .attr('d', d3.line()
                     .x((d, i) => x(this.times[i]))
@@ -152,13 +180,28 @@ export default {
 
             svg3.append('g')
                 .attr('transform', `translate(0, ${height})`)
-                .call(xAxis);
+                .call(xAxis)
+                .append("text")
+                .attr('text-anchor', 'end')
+                .attr('x', width) 
+                .attr('y', margin.bottom - 3) 
+                .style("fill", "black")
+                .text('Time (ms)');
+
             svg3.append('g')
                 .call(yAxis3)
+                .append("text")
+                .attr("text-anchor", "end")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left + 20)
+                .attr("x", -margin.top)
+                .attr("fill", "black")
+                .text("Velocity (Deg/sec)");
+
             svg3.append('path')
                 .datum(this.velocities)
                 .attr('fill', 'none')
-                .attr('stroke', 'steelblue')
+                .attr('stroke', '#0f6e2f')
                 .attr('stroke-width', 1.5)
                 .attr('d', d3.line()
                     .x((d, i) => x(this.times[i]))
