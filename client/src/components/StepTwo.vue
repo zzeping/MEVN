@@ -22,16 +22,21 @@ import * as d3 from "d3";
 export default {
     data() {
         return {
+            index: [],
             torques: [],
             times: [],
             posAnats: [],
             velocities: [],
             velocityLimits: [],
+            indexArr: [],
             torquesArr: [],
             timesArr: [],
             posAnatsArr: [],
             velocitiesArr: [],
             fileContent: '',
+            sectionPoints: [0],
+            numSections: 1,
+
         }
     },
     props: {
@@ -45,6 +50,7 @@ export default {
     watch: {
         'formData.dataFile'(new_file) {
             if (new_file != null) {
+                this.indexArr = [];
                 this.torquesArr = [];
                 this.timesArr = [];
                 this.velocitiesArr = [];
@@ -82,6 +88,7 @@ export default {
                 this.torques = data.map(point => parseFloat(point.torque));
                 this.posAnats = data.map(point => parseFloat(point.posAnat));
                 this.velocities = data.map(point => parseFloat(point.velocity));
+                this.index = Array.from({ length: this.times.length }, (_, i) => i);
                 this.applyVelocityFiltering();
                 this.drawChart();
             };
@@ -113,8 +120,37 @@ export default {
                     this.timesArr.push(this.times[i]);
                     this.posAnatsArr.push(this.posAnats[i]);
                     this.velocitiesArr.push(this.velocities[i]);
+                    this.indexArr.push(this.index[i]);
                 }
             }
+            this.creatSectionData();
+            // filter according to specified range of angle motion: 80 for concentric; 65 for eccentric 
+            for (let i = this.numSections * 2 - 1; i >= 0; i -= 2) {
+                if (Math.abs(this.posAnatsArr[this.sectionPoints[i - 1]] - this.posAnatsArr[this.sectionPoints[i]]) < 60) {
+                    this.indexArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
+                    this.posAnatsArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
+                    this.timesArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
+                    this.torquesArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
+                    this.velocitiesArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
+                }
+            }
+            this.creatSectionData();
+
+        },
+
+        // create section data, sectionPoints stores the starts and ends of all sections. 
+        creatSectionData() {
+            this.numSections = 1;
+            this.sectionPoints = [0];
+            //Look for non-contiguous values in the index column
+            for (let i = 0; i < this.indexArr.length - 1; i++) {
+                while (this.indexArr[i + 1] - this.indexArr[i] !== 1) {
+                    this.numSections++;
+                    this.sectionPoints.push(i, i + 1);
+                    break;
+                }
+            }
+            this.sectionPoints.push(this.indexArr.length - 1);
         },
 
 
