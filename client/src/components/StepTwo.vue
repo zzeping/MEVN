@@ -26,6 +26,11 @@ export default {
             times: [],
             posAnats: [],
             velocities: [],
+            velocityLimits: [],
+            torquesArr: [],
+            timesArr: [],
+            posAnatsArr: [],
+            velocitiesArr: [],
             fileContent: '',
         }
     },
@@ -40,6 +45,10 @@ export default {
     watch: {
         'formData.dataFile'(new_file) {
             if (new_file != null) {
+                this.torquesArr = [];
+                this.timesArr = [];
+                this.velocitiesArr = [];
+                this.posAnatsArr = [];
                 d3.select(this.$refs.chart1).selectAll('g').remove();
                 d3.select(this.$refs.chart2).selectAll('g').remove();
                 d3.select(this.$refs.chart3).selectAll('g').remove();
@@ -73,11 +82,42 @@ export default {
                 this.torques = data.map(point => parseFloat(point.torque));
                 this.posAnats = data.map(point => parseFloat(point.posAnat));
                 this.velocities = data.map(point => parseFloat(point.velocity));
-
+                this.applyVelocityFiltering();
                 this.drawChart();
             };
             reader.readAsText(file);
         },
+
+        // obtain the processed array, which is the filtered data based on velocity
+        applyVelocityFiltering() {
+            // calculate the velMax
+            let temp = [];
+            for (let i = 0; i < this.velocities.length; i++) {
+                if (Math.abs(this.velocities[i]) !== 0) {
+                    temp.push(this.velocities[i]);
+                }
+            }
+            const mode = arr => arr.reduce((a, b, c, d) => arr.filter(v => v === a).length >= arr.filter(v => v === b).length ? a : b);
+            let velMax = Math.abs(Math.round(mode(temp) / 10) * 10);
+
+            // apply velocity filter
+            let velocityLimits = [];
+            velocityLimits[0] = velMax + Math.abs(velMax * this.formData.velTol);
+            velocityLimits[1] = velMax - Math.abs(velMax * this.formData.velTol);
+            velocityLimits[2] = -velMax + Math.abs(velMax * this.formData.velTol);
+            velocityLimits[3] = -velMax - Math.abs(velMax * this.formData.velTol);
+            for (let i = 0; i < this.times.length; i++) {
+                if ((this.velocities[i] <= velocityLimits[0] && this.velocities[i] >= velocityLimits[1]) ||
+                    (this.velocities[i] <= velocityLimits[2] && this.velocities[i] >= velocityLimits[3])) {
+                    this.torquesArr.push(this.torques[i]);
+                    this.timesArr.push(this.times[i]);
+                    this.posAnatsArr.push(this.posAnats[i]);
+                    this.velocitiesArr.push(this.velocities[i]);
+                }
+            }
+        },
+
+
         drawChart() {
             const margin = { top: 20, right: 20, bottom: 30, left: 50 };
             const width = 900 - margin.left - margin.right;
@@ -127,10 +167,10 @@ export default {
                 .append("text")
                 .style("fill", "black")
                 .attr('text-anchor', 'end')
-                .attr('x', width) 
-                .attr('y', margin.bottom - 3) 
+                .attr('x', width)
+                .attr('y', margin.bottom - 3)
                 .text('Time (ms)');
-                
+
             svg1.append('g')
                 .call(yAxis1)
                 .append("text")
@@ -149,13 +189,24 @@ export default {
                     .x((d, i) => x(this.times[i]))
                     .y(d => y1(d))
                 );
+
+            svg1.selectAll("circle")
+                .data(this.torquesArr)
+                .enter()
+                .append("circle")
+                .attr("cx", (d, i) => x(this.timesArr[i]))
+                .attr("cy", d => y1(d))
+                .attr("r", 3)
+                .attr("stroke", "rgba(115,185,215,0.7)")
+                .attr("fill", "none");
+
             svg2.append('g')
                 .attr('transform', `translate(0, ${height})`)
                 .call(xAxis)
                 .append("text")
                 .attr('text-anchor', 'end')
-                .attr('x', width) 
-                .attr('y', margin.bottom - 3) 
+                .attr('x', width)
+                .attr('y', margin.bottom - 3)
                 .style("fill", "black")
                 .text('Time (ms)');
 
@@ -178,13 +229,23 @@ export default {
                     .y(d => y2(d))
                 );
 
+            svg2.selectAll("circle")
+                .data(this.posAnatsArr)
+                .enter()
+                .append("circle")
+                .attr("cx", (d, i) => x(this.timesArr[i]))
+                .attr("cy", d => y2(d))
+                .attr("r", 3)
+                .attr("stroke", "rgba(115,185,215,0.7)")
+                .attr("fill", "none");
+
             svg3.append('g')
                 .attr('transform', `translate(0, ${height})`)
                 .call(xAxis)
                 .append("text")
                 .attr('text-anchor', 'end')
-                .attr('x', width) 
-                .attr('y', margin.bottom - 3) 
+                .attr('x', width)
+                .attr('y', margin.bottom - 3)
                 .style("fill", "black")
                 .text('Time (ms)');
 
@@ -207,7 +268,15 @@ export default {
                     .x((d, i) => x(this.times[i]))
                     .y(d => y3(d))
                 );
-
+            svg3.selectAll("circle")
+                .data(this.velocitiesArr)
+                .enter()
+                .append("circle")
+                .attr("cx", (d, i) => x(this.timesArr[i]))
+                .attr("cy", d => y3(d))
+                .attr("r", 3)
+                .attr("stroke", "rgba(115,185,215,0.7)")
+                .attr("fill", "none");
 
         },
 

@@ -63,6 +63,7 @@ export default {
                 joint: '',
                 dataType: '',
                 test_time: '',
+                velTol: 0.1,
 
             }
         }
