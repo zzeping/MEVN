@@ -21,7 +21,7 @@
                             </v-col>
 
                             <v-col cols="12" md="6">
-                                <v-select :rules="rules" v-model="patient" :items="filteredPatients"
+                                <v-select :rules="rules" @change="changePatient" v-model="patient" :items="filteredPatients"
                                     :item-text="concatenatedText" item-value="_id" label="Select the patient"
                                     :filterable="true">
                                     <template v-slot:item="{ item }">
@@ -39,13 +39,13 @@
                                 </v-file-input>
                             </v-col>
                             <v-col cols="12" md="6">
-                                <v-select :rules="rules" v-model="joint" :items="joints" label="Joint" class="pt-5"
+                                <v-select :rules="rules" @change="changeJoint" v-model="joint" :items="joints" label="Joint" class="pt-5"
                                     dense></v-select>
                             </v-col>
                         </v-row>
                         <v-row>
                             <v-col cols="12">
-                                <v-radio-group v-model="dataTpye" row :rules="rules">
+                                <v-radio-group @change="changeType" v-model="dataType" row :rules="rules">
                                     <template v-slot:label>
                                         <v-tooltip bottom>
                                             <template v-slot:activator="{ on }">
@@ -88,8 +88,8 @@ export default {
             searchQuery: '',
             joints: ['Left knee', 'Right knee', 'Others'],
             joint: '',
-            dataTpye: '',
             patient: '',
+            dataType: '',
         }
     },
     computed: {
@@ -125,11 +125,8 @@ export default {
             // formData.append("data", this.dataFile);
             if (this.$refs.form.validate()) {
                 // const response = await API.uploadData(formData);
-                this.formData.patientID = this.patientID;
-                this.formData.dataTpye = this.dataTpye;
-                this.formData.joint = this.joint;
-                console.log(this.formData.dataFile);
                 this.next();
+                
             }
         },
         async getPatients() {
@@ -137,6 +134,15 @@ export default {
         },
         selectFile(file) {
             this.formData.dataFile = file[0];
+        },
+        changeType() {
+            this.formData.dataType = this.dataType;
+        },
+        changePatient() {
+            this.formData.patient = this.patient;
+        },
+        changeJoint() {
+            this.formData.joint = this.joint;
         },
 
     },

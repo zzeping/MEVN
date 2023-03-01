@@ -61,16 +61,16 @@ export default {
     },
     watch: {
         'formData.dataFile'(new_file) {
-            if (new_file != null) {
-                this.indexArr = [];
-                this.torquesArr = [];
-                this.timesArr = [];
-                this.velocitiesArr = [];
-                this.posAnatsArr = [];
-                d3.select(this.$refs.chart1).selectAll('g').remove();
-                d3.select(this.$refs.chart2).selectAll('g').remove();
-                d3.select(this.$refs.chart3).selectAll('g').remove();
-                this.loadDataFile(new_file);
+            if (new_file != null && this.formData.dataType != null) {
+                this.clearChart();
+                this.loadDataFile(new_file, this.formData.dataType);
+            }
+        },
+        'formData.dataType'(new_type) {
+            console.log(this.formData.dataFile)
+            if (this.formData.dataFile != null && new_type != null) {
+                this.clearChart();
+                this.loadDataFile(this.formData.dataFile, new_type);
             }
         }
     },
@@ -84,7 +84,18 @@ export default {
         viewResult() {
             this.result();
         },
-        loadDataFile(file) {
+        clearChart() {
+            this.indexArr = [];
+            this.torquesArr = [];
+            this.timesArr = [];
+            this.velocitiesArr = [];
+            this.posAnatsArr = [];
+            d3.select(this.$refs.chart1).selectAll('g').remove();
+            d3.select(this.$refs.chart2).selectAll('g').remove();
+            d3.select(this.$refs.chart3).selectAll('g').remove();
+        },
+        loadDataFile(file, type) {
+            console.log(type);
             let reader = new FileReader();
             reader.onload = (e) => {
                 this.fileContent = e.target.result;
@@ -199,7 +210,7 @@ export default {
                     break;
                 }
             }
-            
+
             //Discard sections where outside tolerance wrt max ROM
             for (let i = hamIndices.length - 1; i >= 1; i -= 2) {
                 if (Math.abs(this.posAnatsArr[hamIndices[i]] - this.posAnatsArr[hamIndices[i - 1]]) < this.formData.romTol * maxROMHam) {
@@ -245,7 +256,7 @@ export default {
                     break;
                 }
             }
-            
+
             //Discard sections where outside tolerance wrt max ROM
             for (let i = quadIndices.length - 1; i >= 1; i -= 2) {
                 if (Math.abs(this.posAnatsArr[quadIndices[i]] - this.posAnatsArr[quadIndices[i - 1]]) < this.formData.romTol * maxROMQuad) {

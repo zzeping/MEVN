@@ -61,11 +61,11 @@ export default {
                 dataFile: null,
                 patientID: '',
                 joint: '',
-                dataType: '',
                 test_time: '',
                 velTol: 0.1,
                 romTol: 0.9,
                 torTol: 0.9,
+                dataType: null,
 
             }
         }
