@@ -23,7 +23,7 @@
                 </v-stepper-content>
 
                 <v-stepper-content step="2">
-                    <StepTwo :next="nextStep" :previous="previousStep" :formData="formData" />
+                    <StepTwo :next="nextStep" :result="resultStep" :previous="previousStep" :formData="formData" />
                 </v-stepper-content>
 
                 <v-stepper-content step="3">
@@ -74,6 +74,9 @@ export default {
         },
         previousStep() {
             this.e1--;
+        },
+        resultStep() {
+            this.e1 = 4;
         }
     },
 }

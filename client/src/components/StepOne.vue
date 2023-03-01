@@ -35,7 +35,7 @@
                         <v-row>
                             <v-col cols="12" md="6">
                                 <v-file-input @change="selectFile" :rules="rules" show-size counter multiple
-                                 label="Upload data">
+                                    label="Upload data">
                                 </v-file-input>
                             </v-col>
                             <v-col cols="12" md="6">
@@ -61,6 +61,12 @@
                             </v-col>
                         </v-row>
                     </v-card>
+
+                </v-col>
+                
+            </v-row>
+            <v-row no-gutters class="d-flex justify-center">
+                <v-col class="d-flex justify-end" sm="8">
                     <v-btn type="submit" color="primary">
                         Continue
                     </v-btn>

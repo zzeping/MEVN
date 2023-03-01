@@ -1,17 +1,23 @@
 
 <template>
     <v-container class="pl-10 pr-10">
-        <v-card class="mb-12 pl-8" height="490px">
+        <v-card class="mb-8 pl-8" height="490px">
             <svg ref="chart1"></svg>
             <svg ref="chart2"></svg>
             <svg ref="chart3"></svg>
         </v-card>
 
-        <v-btn color="primary" @click="nextStep">
-            Continue
-        </v-btn>
-
-        <v-btn text @click="previousStep">Back</v-btn>
+        <v-row class="text-center">
+            <v-col md="4" class="d-flex justify-left">
+                <v-btn color="primary" @click="previousStep">back</v-btn>
+            </v-col>
+            <v-col md="4">
+                <v-btn outlined color="primary" @click="nextStep">I am not satisfied</v-btn>
+            </v-col>
+            <v-col md="4" class="d-flex justify-end">
+                <v-btn color="primary" @click="viewResult">view result</v-btn>
+            </v-col>
+        </v-row>
     </v-container>
 </template>
 
@@ -42,6 +48,7 @@ export default {
     props: {
         next: Function,
         previous: Function,
+        result: Function,
         formData: {
             type: Object,
             required: true
@@ -68,6 +75,9 @@ export default {
         },
         previousStep() {
             this.previous();
+        },
+        viewResult() {
+            this.result();
         },
         loadDataFile(file) {
             let reader = new FileReader();
@@ -126,7 +136,7 @@ export default {
             this.creatSectionData();
             // filter according to specified range of angle motion: 80 for concentric; 65 for eccentric 
             for (let i = this.numSections * 2 - 1; i >= 0; i -= 2) {
-                if (Math.abs(this.posAnatsArr[this.sectionPoints[i - 1]] - this.posAnatsArr[this.sectionPoints[i]]) < 60) {
+                if (Math.abs(this.posAnatsArr[this.sectionPoints[i - 1]] - this.posAnatsArr[this.sectionPoints[i]]) < 80) {
                     this.indexArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
                     this.posAnatsArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
                     this.timesArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
@@ -135,6 +145,8 @@ export default {
                 }
             }
             this.creatSectionData();
+
+
 
         },
 
