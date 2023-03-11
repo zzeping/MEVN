@@ -36,9 +36,17 @@ export default {
             velocityLimits: [],
             indexArr: [],
             torquesArr: [],
+            torquesArr_h: [],
+            torquesArr_q: [],
             timesArr: [],
+            timesArr_h: [],
+            timesArr_q: [],
             posAnatsArr: [],
+            posAnatsArr_h: [],
+            posAnatsArr_q: [],
             velocitiesArr: [],
+            velocitiesArr_h: [],
+            velocitiesArr_q: [],
             fileContent: '',
             sectionPoints: [0],
             numSections: 1,
@@ -90,6 +98,14 @@ export default {
             this.timesArr = [];
             this.velocitiesArr = [];
             this.posAnatsArr = [];
+            this.torquesArr_h = [];
+            this.torquesArr_q = [];
+            this.timesArr_h = [];
+            this.timesArr_q = [];
+            this.velocitiesArr_h = [];
+            this.velocitiesArr_q = [];
+            this.posAnatsArr_h = [];
+            this.posAnatsArr_q = [];
             d3.select(this.$refs.chart1).selectAll('g').remove();
             d3.select(this.$refs.chart2).selectAll('g').remove();
             d3.select(this.$refs.chart3).selectAll('g').remove();
@@ -245,6 +261,13 @@ export default {
                     }
                 }
 
+                for (let i = 0; i < hamIndices.length; i += 2) {
+                    this.torquesArr_h.push(...this.torquesArr.slice(hamIndices[i], hamIndices[i + 1]));
+                    this.timesArr_h.push(...this.timesArr.slice(hamIndices[i], hamIndices[i + 1]));
+                    this.posAnatsArr_h.push(...this.posAnatsArr.slice(hamIndices[i], hamIndices[i + 1]));
+                    this.velocitiesArr_h.push(...this.velocitiesArr.slice(hamIndices[i], hamIndices[i + 1]));
+                }
+
                 this.creatSectionData();
                 // repeat for quadriceps
                 let quadIndices = [];
@@ -290,6 +313,14 @@ export default {
                         quadIndices.splice(i - 1, 1);
                     }
                 }
+
+                for (let i = 0; i < quadIndices.length; i += 2) {
+                    this.torquesArr_q.push(...this.torquesArr.slice(quadIndices[i], quadIndices[i + 1]));
+                    this.timesArr_q.push(...this.timesArr.slice(quadIndices[i], quadIndices[i + 1]));
+                    this.posAnatsArr_q.push(...this.posAnatsArr.slice(quadIndices[i], quadIndices[i + 1]));
+                    this.velocitiesArr_q.push(...this.velocitiesArr.slice(quadIndices[i], quadIndices[i + 1]));
+                }
+
             } else {
                 let hamIndices = this.sectionPoints;
                 this.minTorque = Math.min(...this.torquesArr);
@@ -428,15 +459,28 @@ export default {
                     .y(d => y1(d))
                 );
 
-            svg1.selectAll("circle")
-                .data(this.torquesArr)
+            svg1.selectAll(".torques-h")
+                .data(this.torquesArr_h)
                 .enter()
                 .append("circle")
-                .attr("cx", (d, i) => x(this.timesArr[i]))
+                .attr("class", "torques-h")
+                .attr("cx", (d, i) => x(this.timesArr_h[i]))
                 .attr("cy", d => y1(d))
                 .attr("r", 3)
-                .attr("stroke", "rgba(115,185,215,0.7)")
+                .attr("stroke", "#73B9D7")
                 .attr("fill", "none");
+
+            svg1.selectAll(".torques-q")
+                .data(this.torquesArr_q)
+                .enter()
+                .append("circle")
+                .attr("class", "torques-q")
+                .attr("cx", (d, i) => x(this.timesArr_q[i]))
+                .attr("cy", d => y1(d))
+                .attr("r", 3)
+                .attr("stroke", "#D79173")
+                .attr("fill", "none");
+
 
             svg2.append('g')
                 .attr('transform', `translate(0, ${height})`)
@@ -467,14 +511,26 @@ export default {
                     .y(d => y2(d))
                 );
 
-            svg2.selectAll("circle")
-                .data(this.posAnatsArr)
+            svg2.selectAll(".posAn-h")
+                .data(this.posAnatsArr_h)
                 .enter()
                 .append("circle")
-                .attr("cx", (d, i) => x(this.timesArr[i]))
+                .attr("class", "posAn-h")
+                .attr("cx", (d, i) => x(this.timesArr_h[i]))
                 .attr("cy", d => y2(d))
                 .attr("r", 3)
-                .attr("stroke", "rgba(115,185,215,0.7)")
+                .attr("stroke", "#73B9D7")
+                .attr("fill", "none");
+
+            svg2.selectAll(".posAn-q")
+                .data(this.posAnatsArr_q)
+                .enter()
+                .append("circle")
+                .attr("class", "posAn-q")
+                .attr("cx", (d, i) => x(this.timesArr_q[i]))
+                .attr("cy", d => y2(d))
+                .attr("r", 3)
+                .attr("stroke", "#D79173")
                 .attr("fill", "none");
 
             svg3.append('g')
@@ -506,14 +562,26 @@ export default {
                     .x((d, i) => x(this.times[i]))
                     .y(d => y3(d))
                 );
-            svg3.selectAll("circle")
-                .data(this.velocitiesArr)
+            svg3.selectAll(".velo-h")
+                .data(this.velocitiesArr_h)
                 .enter()
                 .append("circle")
-                .attr("cx", (d, i) => x(this.timesArr[i]))
+                .attr("class", "velo-h")
+                .attr("cx", (d, i) => x(this.timesArr_h[i]))
                 .attr("cy", d => y3(d))
                 .attr("r", 3)
-                .attr("stroke", "rgba(115,185,215,0.7)")
+                .attr("stroke", "#73B9D7")
+                .attr("fill", "none");
+
+            svg3.selectAll(".velo-q")
+                .data(this.velocitiesArr_q)
+                .enter()
+                .append("circle")
+                .attr("class", "velo-q")
+                .attr("cx", (d, i) => x(this.timesArr_q[i]))
+                .attr("cy", d => y3(d))
+                .attr("r", 3)
+                .attr("stroke", "#D79173")
                 .attr("fill", "none");
 
         },
