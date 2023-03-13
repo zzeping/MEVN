@@ -63,10 +63,14 @@ export default {
                 joint: '',
                 test_time: '',
                 velTol: 0.1,
-                romTol: 0.9,
-                torTol: 0.9,
+                romTol: 0.1,
+                torTol: 0.1,
                 dataType: null,
-
+                x_angle_h: [],
+                y_torq_h: [],
+                x_angle_q: [],
+                y_torq_q: [],
+                viewResult: 0,
             }
         }
     },

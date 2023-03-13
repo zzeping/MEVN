@@ -90,6 +90,7 @@ export default {
             this.previous();
         },
         viewResult() {
+            this.formData.viewResult = 1; 
             this.result();
         },
         clearChart() {
@@ -227,7 +228,7 @@ export default {
                 //For each section in hamIndices, the code checks if the minimum torque in that section is 
                 //within 10% of the minimum torque of the entire dataset.
                 for (let i = hamIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.min(...this.torquesArr.slice(hamIndices[i - 1], hamIndices[i] + 1)) > this.formData.torTol * this.minTorque) {
+                    if (Math.min(...this.torquesArr.slice(hamIndices[i - 1], hamIndices[i] + 1)) > (1-this.formData.torTol) * this.minTorque) {
                         this.indexArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
                         this.timesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
                         this.velocitiesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
@@ -250,7 +251,7 @@ export default {
 
                 //Discard sections where outside tolerance wrt max ROM
                 for (let i = hamIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.abs(this.posAnatsArr[hamIndices[i]] - this.posAnatsArr[hamIndices[i - 1]]) < this.formData.romTol * maxROMHam) {
+                    if (Math.abs(this.posAnatsArr[hamIndices[i]] - this.posAnatsArr[hamIndices[i - 1]]) < (1-this.formData.romTol) * maxROMHam) {
                         this.indexArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
                         this.timesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
                         this.velocitiesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
@@ -262,10 +263,10 @@ export default {
                 }
 
                 for (let i = 0; i < hamIndices.length; i += 2) {
-                    this.torquesArr_h.push(...this.torquesArr.slice(hamIndices[i], hamIndices[i + 1]));
-                    this.timesArr_h.push(...this.timesArr.slice(hamIndices[i], hamIndices[i + 1]));
-                    this.posAnatsArr_h.push(...this.posAnatsArr.slice(hamIndices[i], hamIndices[i + 1]));
-                    this.velocitiesArr_h.push(...this.velocitiesArr.slice(hamIndices[i], hamIndices[i + 1]));
+                    this.torquesArr_h.push(...this.torquesArr.slice(hamIndices[i], hamIndices[i + 1]+1));
+                    this.timesArr_h.push(...this.timesArr.slice(hamIndices[i], hamIndices[i + 1]+1));
+                    this.posAnatsArr_h.push(...this.posAnatsArr.slice(hamIndices[i], hamIndices[i + 1]+1));
+                    this.velocitiesArr_h.push(...this.velocitiesArr.slice(hamIndices[i], hamIndices[i + 1]+1));
                 }
 
                 this.creatSectionData();
@@ -280,7 +281,7 @@ export default {
                 //For each section in quadIndices, the code checks if the max torque in that section is 
                 //within 10% of the max torque of the entire dataset.
                 for (let i = quadIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.max(...this.torquesArr.slice(quadIndices[i - 1], quadIndices[i] + 1)) < this.formData.torTol * this.maxTorque) {
+                    if (Math.max(...this.torquesArr.slice(quadIndices[i - 1], quadIndices[i] + 1)) < (1-this.formData.torTol) * this.maxTorque) {
                         this.indexArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
                         this.timesArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
                         this.velocitiesArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
@@ -303,7 +304,7 @@ export default {
 
                 //Discard sections where outside tolerance wrt max ROM
                 for (let i = quadIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.abs(this.posAnatsArr[quadIndices[i]] - this.posAnatsArr[quadIndices[i - 1]]) < this.formData.romTol * maxROMQuad) {
+                    if (Math.abs(this.posAnatsArr[quadIndices[i]] - this.posAnatsArr[quadIndices[i - 1]]) < (1-this.formData.romTol) * maxROMQuad) {
                         this.indexArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
                         this.timesArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
                         this.velocitiesArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
@@ -315,19 +316,20 @@ export default {
                 }
 
                 for (let i = 0; i < quadIndices.length; i += 2) {
-                    this.torquesArr_q.push(...this.torquesArr.slice(quadIndices[i], quadIndices[i + 1]));
-                    this.timesArr_q.push(...this.timesArr.slice(quadIndices[i], quadIndices[i + 1]));
-                    this.posAnatsArr_q.push(...this.posAnatsArr.slice(quadIndices[i], quadIndices[i + 1]));
-                    this.velocitiesArr_q.push(...this.velocitiesArr.slice(quadIndices[i], quadIndices[i + 1]));
+                    this.torquesArr_q.push(...this.torquesArr.slice(quadIndices[i], quadIndices[i + 1]+1));
+                    this.timesArr_q.push(...this.timesArr.slice(quadIndices[i], quadIndices[i + 1]+1));
+                    this.posAnatsArr_q.push(...this.posAnatsArr.slice(quadIndices[i], quadIndices[i + 1]+1));
+                    this.velocitiesArr_q.push(...this.velocitiesArr.slice(quadIndices[i], quadIndices[i + 1]+1));
                 }
 
             } else {
                 let hamIndices = this.sectionPoints;
                 this.minTorque = Math.min(...this.torquesArr);
                 this.minIndex = this.torquesArr.indexOf(this.minTorque);
-
+                console.log(this.torquesArr)
+                console.log(this.sectionPoints)
                 for (let i = hamIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.min(...this.torquesArr.slice(hamIndices[i - 1], hamIndices[i] + 1)) > this.formData.torTol * this.minTorque) {
+                    if (Math.min(...this.torquesArr.slice(hamIndices[i - 1], hamIndices[i] + 1)) > (1-this.formData.torTol) * this.minTorque) {
                         this.indexArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
                         this.timesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
                         this.velocitiesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
@@ -348,7 +350,7 @@ export default {
                 }
 
                 for (let i = hamIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.abs(this.posAnatsArr[hamIndices[i]] - this.posAnatsArr[hamIndices[i - 1]]) < this.formData.romTol * maxROMHam) {
+                    if (Math.abs(this.posAnatsArr[hamIndices[i]] - this.posAnatsArr[hamIndices[i - 1]]) < (1-this.formData.romTol) * maxROMHam) {
                         this.indexArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
                         this.timesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
                         this.velocitiesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
@@ -360,7 +362,10 @@ export default {
                 }
 
             }
-
+            this.formData.x_angle_h = this.posAnatsArr_h;
+            this.formData.y_torq_h = this.torquesArr_h;
+            this.formData.x_angle_q = this.posAnatsArr_h;
+            this.formData.y_torq_q = this.torquesArr_q;
             this.creatSectionData();
         },
 
