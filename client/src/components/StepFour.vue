@@ -40,7 +40,7 @@ export default {
         'formData.viewResult'(new_view) {
             this.x_h = this.formData.x_angle_h;
             this.y_h = this.formData.y_torq_h;
-            this.x_q_ = this.formData.x_angle_q;
+            this.x_q = this.formData.x_angle_q;
             this.y_q = this.formData.y_torq_q;
             if (new_view) {
                 this.loadResult();
@@ -66,6 +66,8 @@ export default {
             let n = 0;
             let averagedXh = [];
             let averagedYh = [];
+            let averagedXq = [];
+            let averagedYq = [];
 
             while (i < sortedXh.length) {
                 if (x === 0 || sortedXh[i] === x) {
@@ -74,7 +76,7 @@ export default {
                     n++;
                 } else {
                     averagedXh.push(x);
-                    averagedYh.push(y/n);
+                    averagedYh.push(y / n);
                     x = sortedXh[i];
                     y = sortedYh[i];
                     n = 1;
@@ -84,13 +86,50 @@ export default {
 
             if (n !== 0) {
                 averagedXh.push(x);
-                averagedYh.push(y/n);
+                averagedYh.push(y / n);
+            }
+            if (averagedXh[averagedXh.length - 1] - averagedXh[0] + 1 == averagedXh.length) {
+                averagedYh = this.moving(averagedYh, 10);
+            } else {
+                console.log("lowess")
+            }
+            let avg_h = averagedXh.map(function (d, i) { return { x: d, y: averagedYh[i] }; });
+
+            // same for quadriceps
+            i = 0;
+            x = 0;
+            y = 0;
+            n = 0;
+            let XY_q = this.x_q.map((value, index) => ({ x: value, y: this.y_q[index] }));
+            XY_q.sort((a, b) => a.x - b.x);
+            const sortedXq = XY_q.map(obj => obj.x);
+            const sortedYq = XY_q.map(obj => obj.y);
+
+            while (i < sortedXq.length) {
+                if (x === 0 || sortedXq[i] === x) {
+                    y += sortedYq[i];
+                    x = sortedXq[i];
+                    n++;
+                } else {
+                    averagedXq.push(x);
+                    averagedYq.push(y / n);
+                    x = sortedXq[i];
+                    y = sortedYq[i];
+                    n = 1;
+                }
+                i++;
             }
 
-            console.log(averagedXh)
-            console.log(averagedYh)
-
-
+            if (n !== 0) {
+                averagedXq.push(x);
+                averagedYq.push(y / n);
+            }
+            if (averagedXq[averagedXq.length - 1] - averagedXq[0] + 1 == averagedXq.length) {
+                averagedYq = this.moving(averagedYq, 10);
+            } else {
+                console.log("lowess")
+            }
+            let avg_q = averagedXq.map(function (d, i) { return { x: d, y: averagedYq[i] }; }); 
 
             // set the size and padding of the chart
             const margin = { top: 10, right: 20, bottom: 30, left: 50 };
@@ -133,8 +172,7 @@ export default {
             svg1.append('g').attr('class', 'y axis').call(yAxis1);
 
             // add the scatter points to the chart
-            svg1
-                .selectAll('circle')
+            svg1.selectAll('circle')
                 .data(this.x_h)
                 .enter()
                 .append('circle')
@@ -144,9 +182,56 @@ export default {
                 .attr("stroke", "#73B9D7")
                 .attr("fill", "none");
 
+            svg1.append("path")
+                .datum(avg_h)
+                .attr("d", d3.line()
+                    .x(function (d) { return xScale1(d.x); })
+                    .y(function (d) { return yScale1(d.y); }))
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("fill", "none");
+
+            // add the x and y axes to the chart
+            svg2.append('g').attr('class', 'x axis').attr('transform', `translate(0,${height})`).call(xAxis2);
+            svg2.append('g').attr('class', 'y axis').call(yAxis2);
+
+            // add the scatter points to the chart
+            svg2
+                .selectAll('circle')
+                .data(this.x_q)
+                .enter()
+                .append('circle')
+                .attr('cx', (d, i) => xScale2(this.x_q[i]))
+                .attr('cy', (d, i) => yScale2(this.y_q[i]))
+                .attr('r', 2)
+                .attr("stroke", "#73B9D7")
+                .attr("fill", "none");
+            svg2.append("path")
+                .datum(avg_q)
+                .attr("d", d3.line()
+                    .x(function (d) { return xScale2(d.x); })
+                    .y(function (d) { return yScale2(d.y); }))
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("fill", "none");
+
         },
-        smooth(y, v) {
-            
+        moving(y, span) {
+            span = Math.floor(span);
+            var n = y.length;
+            span = Math.min(span, n);
+            var width = span - 1 + (span % 2); // force it to be odd
+            var c = new Array(n).fill(0);
+            for (var i = 0; i < n; i++) {
+                var sum = 0;
+                for (var j = i - Math.floor(width / 2); j <= i + Math.floor(width / 2); j++) {
+                    if (j >= 0 && j < n) {
+                        sum += y[j];
+                    }
+                }
+                c[i] = sum / width;
+            }
+            return c;
         },
 
     }

@@ -364,7 +364,7 @@ export default {
             }
             this.formData.x_angle_h = this.posAnatsArr_h;
             this.formData.y_torq_h = this.torquesArr_h;
-            this.formData.x_angle_q = this.posAnatsArr_h;
+            this.formData.x_angle_q = this.posAnatsArr_q;
             this.formData.y_torq_q = this.torquesArr_q;
             this.creatSectionData();
         },
