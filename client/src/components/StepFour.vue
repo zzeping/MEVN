@@ -1,8 +1,8 @@
 <template>
     <v-container class="pl-10 pr-10">
         <v-card class="mb-8 pl-8" height="490px">
-            <svg ref="chart1"></svg>
             <svg ref="chart2"></svg>
+            <svg ref="chart1"></svg>
             <svg ref="chart3"></svg>
         </v-card>
 
@@ -129,7 +129,23 @@ export default {
             } else {
                 console.log("lowess")
             }
-            let avg_q = averagedXq.map(function (d, i) { return { x: d, y: averagedYq[i] }; }); 
+            let avg_q = averagedXq.map(function (d, i) { return { x: d, y: averagedYq[i] }; });
+            console.log(averagedXh)
+            console.log(averagedXq)
+
+            var commonX = [];
+            var ratio = [];
+
+            for (var k = 0; k < averagedXh.length; k++) {
+                if (averagedXq.includes(averagedXh[k])) {
+                    var j = averagedXq.indexOf(averagedXh[k]);
+                    commonX.push(averagedXh[k]);
+                    ratio.push(averagedYh[k] / averagedYq[j]);
+                }
+            }
+
+            console.log(commonX)
+            console.log(ratio)
 
             // set the size and padding of the chart
             const margin = { top: 10, right: 20, bottom: 30, left: 50 };
@@ -159,6 +175,8 @@ export default {
             const yScale1 = d3.scaleLinear().domain([d3.min(this.y_h), d3.max(this.y_h)]).range([height, 0]);
             const xScale2 = d3.scaleLinear().domain([d3.min(this.x_q), d3.max(this.x_q)]).range([0, width]);
             const yScale2 = d3.scaleLinear().domain([d3.min(this.y_q), d3.max(this.y_q)]).range([height, 0]);
+            const xScale3 = d3.scaleLinear().domain([d3.min(commonX), d3.max(commonX)]).range([0, width]);
+            const yScale3 = d3.scaleLinear().domain([d3.min(ratio), d3.max(ratio)]).range([height, 0]);
 
             // create the axes for x and y
             const xAxis1 = d3.axisBottom(xScale1);
@@ -214,6 +232,26 @@ export default {
                 .attr("stroke", "black")
                 .attr("stroke-width", 1)
                 .attr("fill", "none");
+
+            // add the line to the SVG element
+            svg3.append("path")
+                .datum(ratio)
+                .attr("d", d3.line()
+                    .x(function (d, i) { return xScale3(commonX[i]); })
+                    .y(function (d, i) { return yScale3(ratio[i]); }))
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("fill", "none");
+
+            // add the x-axis
+            svg3.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(xScale3));
+
+            // add the y-axis
+            svg3.append("g")
+                .call(d3.axisLeft(yScale3));
+
 
         },
         moving(y, span) {
