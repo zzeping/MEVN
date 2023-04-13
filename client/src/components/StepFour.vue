@@ -31,6 +31,7 @@ export default {
     },
     props: {
         previous: Function,
+        auto: Function,
         formData: {
             type: Object,
             required: true
@@ -38,10 +39,19 @@ export default {
     },
     watch: {
         'formData.viewResult'(new_view) {
-            this.x_h = this.formData.x_angle_h;
-            this.y_h = this.formData.y_torq_h;
-            this.x_q = this.formData.x_angle_q;
-            this.y_q = this.formData.y_torq_q;
+            this.clearChart();
+            if (this.formData.manual == 1) {
+                this.x_h = this.formData.x_angle_h_m;
+                this.y_h = this.formData.y_torq_h_m;
+                this.x_q = this.formData.x_angle_q_m;
+                this.y_q = this.formData.y_torq_q_m;
+            } else {
+                this.x_h = this.formData.x_angle_h;
+                this.y_h = this.formData.y_torq_h;
+                this.x_q = this.formData.x_angle_q;
+                this.y_q = this.formData.y_torq_q;
+            }
+
             if (new_view) {
                 this.loadResult();
             }
@@ -50,14 +60,24 @@ export default {
     methods: {
         previousStep() {
             this.formData.viewResult = 0;
-            this.previous();
+            if (this.formData.manual == 1) {
+                this.previous();
+            } else {
+                this.auto();
+            }
+
+        },
+        clearChart() {
+            d3.select(this.$refs.chart1).selectAll('g').remove();
+            d3.select(this.$refs.chart2).selectAll('g').remove();
+            d3.select(this.$refs.chart3).selectAll('g').remove();
         },
         loadResult() {
 
             let XY_h = this.x_h.map((value, index) => ({ x: value, y: this.y_h[index] }));
             XY_h.sort((a, b) => a.x - b.x);
-            const sortedXh = XY_h.map(obj => obj.x);
-            const sortedYh = XY_h.map(obj => obj.y);
+            let sortedXh = XY_h.map(obj => obj.x);
+            let sortedYh = XY_h.map(obj => obj.y);
 
             // Average and smoooth curves
             let i = 0;
@@ -130,8 +150,8 @@ export default {
                 console.log("lowess")
             }
             let avg_q = averagedXq.map(function (d, i) { return { x: d, y: averagedYq[i] }; });
-            console.log(averagedXh)
-            console.log(averagedXq)
+            console.log(averagedYh)
+            console.log(avg_h)
 
             var commonX = [];
             var ratio = [];
@@ -143,9 +163,6 @@ export default {
                     ratio.push(averagedYh[k] / averagedYq[j]);
                 }
             }
-
-            console.log(commonX)
-            console.log(ratio)
 
             // set the size and padding of the chart
             const margin = { top: 10, right: 20, bottom: 30, left: 50 };
@@ -260,14 +277,25 @@ export default {
             span = Math.min(span, n);
             var width = span - 1 + (span % 2); // force it to be odd
             var c = new Array(n).fill(0);
+            c[0]=y[0];
             for (var i = 0; i < n; i++) {
                 var sum = 0;
-                for (var j = i - Math.floor(width / 2); j <= i + Math.floor(width / 2); j++) {
-                    if (j >= 0 && j < n) {
-                        sum += y[j];
+                if (i - Math.floor(width / 2) >= 0) {
+                    for (var j = i - Math.floor(width / 2); j <= i + Math.floor(width / 2); j++) {
+                        if (j >= 0 && j < n) {
+                            sum += y[j];
+                        }
                     }
+                    c[i] = sum / width;
+                } else {
+                    for (var j = 0; j <= 2*i; j++) {
+                        if (j < n) {
+                            sum += y[j];
+                        }
+                    }
+                    c[i] = sum / (2*i+1);
                 }
-                c[i] = sum / width;
+
             }
             return c;
         },

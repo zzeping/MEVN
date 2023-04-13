@@ -27,11 +27,11 @@
                 </v-stepper-content>
 
                 <v-stepper-content step="3">
-                    <StepThree :next="nextStep" :previous="previousStep" :formData="formData"/>
+                    <StepThree :next="nextStep" :previous="previousStep" :formData="formData" />
                 </v-stepper-content>
 
                 <v-stepper-content step="4">
-                    <StepFour :previous="previousStep" :formData="formData"/>
+                    <StepFour :previous="previousStep" :auto="autoStep" :formData="formData" />
                 </v-stepper-content>
             </v-stepper-items>
         </v-stepper>
@@ -62,15 +62,23 @@ export default {
                 patientID: '',
                 joint: '',
                 test_time: '',
-                velTol: 0.1,
-                romTol: 0.1,
-                torTol: 0.1,
                 dataType: null,
                 x_angle_h: [],
                 y_torq_h: [],
                 x_angle_q: [],
                 y_torq_q: [],
+                x_angle_h_m: [],
+                y_torq_h_m: [],
+                x_angle_q_m: [],
+                y_torq_q_m: [],
                 viewResult: 0,
+                manual: 0,
+                index: [],
+                torques: [],
+                times: [],
+                posAnats: [],
+                velocities: [],
+                velMax: 0,
             }
         }
     },
@@ -83,6 +91,9 @@ export default {
         },
         resultStep() {
             this.e1 = 4;
+        },
+        autoStep() {
+            this.e1 = 2;
         }
     },
 }
