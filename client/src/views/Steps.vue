@@ -59,7 +59,7 @@ export default {
             e1: 1,
             formData: {
                 dataFile: null,
-                patientID: '',
+                patient: '',
                 joint: '',
                 test_time: '',
                 dataType: null,

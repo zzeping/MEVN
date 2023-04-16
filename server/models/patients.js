@@ -9,7 +9,7 @@ const patientSchema = mongoose.Schema({
     birthday: String,
     gender: String,
     records: [{
-        type: mongoose.Schema.Types.ObjectId, ref: 'Record'
+        type: String, ref: 'Record'
     }],
     created: {
         type: Date,

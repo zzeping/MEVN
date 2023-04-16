@@ -26,6 +26,7 @@ let imageUpload = multer({
     storage: imageStorage,
 }).single("image");
 
+const upload = multer()
 // let dataUpload = multer({
 //     storage: dataStorage,
 // }).single("data");
@@ -34,6 +35,8 @@ router.get('/', API.fetchAllPatients);
 router.get('/:id', API.fetchPatientByID);
 router.post('/', imageUpload, API.createNewPatient);
 router.patch('/:id', imageUpload, API.updatePatient);
+router.patch('/:id/record', upload.none(), API.updatePatientRecord);
+router.patch('/:id/record_r', upload.none(), API.removePatientRecord);
 router.delete('/:id', API.deletePatient);
 
 // router.post('/dataUpload',dataUpload, API.uploadData);

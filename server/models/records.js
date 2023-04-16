@@ -4,8 +4,10 @@ const recordSchema = mongoose.Schema({
     joint: String,
     time: String,
     report: String,
-    data: String,
-    patient: {type:mongoose.Schema.Types.ObjectId, ref:'Patient'},
+    data_type: String,
+    hamstring_path: String,
+    quadricep_path: String,
+    patient: String,
     created: {
         type: Date,
         default: Date.now

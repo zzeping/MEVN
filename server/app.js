@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3000;
 
 // middlewares
 app.use(cors());
@@ -22,9 +22,11 @@ mongoose.connect(process.env.DB_URI, {
 }).then(() => console.log('Connected to the database!')).catch(err => console.log(err));
 
 //routes prefix 
-app.use('/api/patient', require('./routes/routes'));
+app.use('/api/patient', require('./routes/routes_p'));
+app.use('/api/record', require('./routes/routes_r'));
 
-if(process.env.NODE_ENV === "production") {
+
+if(process.env.NODE_ENV === "production") { 
     app.use(express.static(__dirname + "/dist/"));
     app.get("*", (req, res) => {
         res.sendFile(__dirname + "/dist/index.html");

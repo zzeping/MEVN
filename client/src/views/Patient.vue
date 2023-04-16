@@ -38,8 +38,8 @@
                                                         :counter="10" label="Last Name" required></v-text-field>
                                                 </v-col>
                                             </v-row>
-                                            <v-text-field v-model="changedPatient.email" :rules="emailRules"
-                                                label="E-mail" required></v-text-field>
+                                            <v-text-field v-model="changedPatient.email" :rules="emailRules" label="E-mail"
+                                                required></v-text-field>
                                             <v-row class="d-flex align-center">
                                                 <v-col cols="12" md="6">
                                                     <v-menu ref="menu" v-model="menu" :close-on-content-click="false"
@@ -92,8 +92,13 @@
                         </div>
                     </v-card-text>
                     <v-divider></v-divider>
-                    <v-data-table :headers="headers" :items="reports" class="elevation-1">
-                        <template v-slot:item.image="{ item }">
+                    <v-data-table :headers="headers" :items="records" class="elevation-1">
+                        <template v-slot:item.actions="{ item }">
+
+                            <v-icon small @click="removeRecord(item._id)">
+                                mdi-delete
+                            </v-icon>
+
                         </template>
                     </v-data-table>
                 </v-card>
@@ -122,6 +127,7 @@ export default {
                 image: "",
                 birthday: "",
                 gender: "",
+                records: "",
             },
             changedPatient: {
                 firstName: "",
@@ -130,11 +136,13 @@ export default {
                 image: "",
                 birthday: "",
                 gender: "",
+                records: "",
             },
             headers: [
                 { text: 'Report', value: 'report' },
                 { text: 'Joint', value: 'joint' },
-                { text: 'Upload time', value: 'time' },
+                { text: 'Test time', value: 'time' },
+                { text: 'Actions', value: 'actions', sortable: false },
             ],
             menu: false,
             genders: ['female', 'male', '(blank)'],
@@ -142,7 +150,8 @@ export default {
             image: "",
             activePicker: null,
             date: null,
-            reports: [],
+            records: [],
+            records_ids: [],
         };
     },
     watch: {
@@ -155,9 +164,24 @@ export default {
         this.patient = response;
         this.date = this.patient.birthday;
         this.reports = this.patient.reports;
-        console.log(this.date);
+        this.records_ids = this.patient.records;
+        this.processRecords();
     },
     methods: {
+        async removeRecord(id) {
+            const formData1 = new FormData();
+            formData1.append("record", id);
+            await API.removePatientRecord(this.$route.params.id,formData1);
+            const response = API.deleteRecord(id);
+            this.$router.go();
+        },
+        async processRecords() {
+            console.log(this.records_ids)
+            for (let id of this.records_ids) {
+                let record = await API.getRecordByID(id);
+                this.records.push(record);
+            }
+        },
         edit() {
             this.changedPatient = Object.assign({}, this.patient);
             console.log(this.changedPatient.firstName);

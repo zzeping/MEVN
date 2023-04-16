@@ -1,9 +1,39 @@
 <template>
     <v-container class="pl-10 pr-10">
         <v-card class="mb-8 pl-8" height="490px">
-            <svg ref="chart2"></svg>
-            <svg ref="chart1"></svg>
-            <svg ref="chart3"></svg>
+            <v-row>
+                <v-col md="8">
+                    <div ref="pics">
+                        <svg ref="chart2"></svg>
+                        <svg ref="chart1"></svg>
+                        <svg ref="chart3"></svg>
+                    </div>
+                </v-col>
+                <v-col md="4">
+                    <v-row class="d-flex justify-end pr-5 pt-10 pl-2">
+                        <v-textarea rows="8" class="px-3" label="Add Notes" variant="solo"></v-textarea>
+                        <v-dialog v-model="dialog" width="auto">
+                            <template v-slot:activator="{ on, attrs }">
+                                <v-btn rounded outlined color="#0f6e2f" v-bind="attrs" v-on="on">download
+                                    report</v-btn></template>
+                            <v-card>
+                                <v-card-text>
+                                    <div class="pt-10 text-h5">
+                                        Please confirm to download the pdf report.
+                                    </div>
+
+                                </v-card-text>
+                                <v-card-actions class="justify-end">
+                                    <v-btn text @click="dialog = false">cancle</v-btn>
+                                    <v-btn color="primary" @click="download">download</v-btn>
+                                </v-card-actions>
+                            </v-card>
+                        </v-dialog>
+                    </v-row>
+
+                </v-col>
+            </v-row>
+
         </v-card>
 
         <v-row class="text-center">
@@ -11,7 +41,7 @@
                 <v-btn color="primary" @click="previousStep">back</v-btn>
             </v-col>
             <v-col md="6" class="d-flex justify-end">
-                <v-btn color="primary">submit</v-btn>
+                <v-btn color="primary" @click="submit">submit</v-btn>
             </v-col>
         </v-row>
     </v-container>
@@ -19,6 +49,10 @@
 
 <script>
 import * as d3 from "d3";
+import jsPDF from "jspdf";
+import * as html2canvas from "html2canvas";
+import API from '@/api';
+
 
 export default {
     data() {
@@ -27,6 +61,8 @@ export default {
             y_h: [],
             x_q: [],
             y_q: [],
+            dialog: false,
+            report: '',
         };
     },
     props: {
@@ -71,6 +107,33 @@ export default {
             d3.select(this.$refs.chart1).selectAll('g').remove();
             d3.select(this.$refs.chart2).selectAll('g').remove();
             d3.select(this.$refs.chart3).selectAll('g').remove();
+        },
+        async submit() {
+            this.generate();
+            const formData1 = new FormData();
+            formData1.append('joint', this.formData.joint);
+            formData1.append('time', this.formData.test_time);
+            formData1.append('data_type', this.formData.dataType);
+            formData1.append('patient', this.formData.patient);
+            // formData.append('report', this.report, 'report.pdf');
+            const response = await API.addRecords(formData1);
+            const formData2 = new FormData();
+            formData2.append('record', response.recordId);
+            await API.updatePatientRecord(this.formData.patient,formData2);
+            this.$router.push({ name: "my_records", params: { message: response.message } })
+        },
+        generate() {
+            html2canvas(this.$refs.pics, { useCORS: true }).then((canvas) => {
+                const imageData = canvas.toDataURL('image/png');
+                const pdfDoc = new jsPDF();
+                pdfDoc.addImage(imageData, 'PNG', 10, 10, 100, 100);
+                this.report = pdfDoc;
+
+            });
+        },
+        download() {
+            this.generate();
+            this.report.save('report.pdf');
         },
         loadResult() {
 
@@ -249,6 +312,9 @@ export default {
                 .attr("stroke", "black")
                 .attr("stroke-width", 1)
                 .attr("fill", "none");
+            d3.select(this.$refs.chart2)
+                .node()
+                .appendChild(svg2.node());
 
             // add the line to the SVG element
             svg3.append("path")
@@ -277,7 +343,7 @@ export default {
             span = Math.min(span, n);
             var width = span - 1 + (span % 2); // force it to be odd
             var c = new Array(n).fill(0);
-            c[0]=y[0];
+            c[0] = y[0];
             for (var i = 0; i < n; i++) {
                 var sum = 0;
                 if (i - Math.floor(width / 2) >= 0) {
@@ -288,12 +354,12 @@ export default {
                     }
                     c[i] = sum / width;
                 } else {
-                    for (var j = 0; j <= 2*i; j++) {
+                    for (var j = 0; j <= 2 * i; j++) {
                         if (j < n) {
                             sum += y[j];
                         }
                     }
-                    c[i] = sum / (2*i+1);
+                    c[i] = sum / (2 * i + 1);
                 }
 
             }

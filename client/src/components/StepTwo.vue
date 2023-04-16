@@ -125,7 +125,7 @@ export default {
             reader.onload = (e) => {
                 this.fileContent = e.target.result;
                 const lines = this.fileContent.split('\n');
-                this.formData.test_time = lines[1];
+                this.formData.test_time = lines[1].slice(0, -1);
                 const data = lines.slice(6)
                     .filter(line => {
                         const [a, time, torque, position, posAnat, velocity] = line.split(/\s+/);
