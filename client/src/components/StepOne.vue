@@ -86,7 +86,7 @@ export default {
             rules: [(value) => !!value || "This field is required!"],
             patients: [],
             searchQuery: '',
-            joints: ['Left knee', 'Right knee', 'Others'],
+            joints: ['left knee', 'right knee','left shoulder','right shoulder','hip', 'left waist', 'right waist', 'Others'],
             joint: '',
             patient: '',
             dataType: '',

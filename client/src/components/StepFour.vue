@@ -2,16 +2,18 @@
     <v-container class="pl-10 pr-10">
         <v-card class="mb-8 pl-8" height="490px">
             <v-row>
-                <v-col md="8">
+                <v-col md="9">
                     <div ref="pics">
                         <svg ref="chart2"></svg>
                         <svg ref="chart1"></svg>
                         <svg ref="chart3"></svg>
                     </div>
+
+
                 </v-col>
-                <v-col md="4">
-                    <v-row class="d-flex justify-end pr-5 pt-10 pl-2">
-                        <v-textarea rows="8" class="px-3" label="Add Notes" variant="solo"></v-textarea>
+                <v-col md="3">
+                    <v-row class="d-flex justify-center pr-15 pt-10">
+                        <v-textarea v-model="note" rows="8" class="px-3" label="Add Notes" variant="solo"></v-textarea>
                         <v-dialog v-model="dialog" width="auto">
                             <template v-slot:activator="{ on, attrs }">
                                 <v-btn rounded outlined color="#0f6e2f" v-bind="attrs" v-on="on">download
@@ -63,6 +65,9 @@ export default {
             y_q: [],
             dialog: false,
             report: '',
+            patients: '',
+            patient_o: '',
+            note: '',
         };
     },
     props: {
@@ -89,9 +94,16 @@ export default {
             }
 
             if (new_view) {
+                this.formData.maxTorque = Math.max(...this.y_q);
+                this.formData.maxTorqueAn = this.x_q[this.y_q.indexOf(this.formData.maxTorque)];
+                this.formData.minTorque = Math.min(...this.y_h);
+                this.formData.minTorqueAn = this.x_h[this.y_h.indexOf(this.formData.minTorque)];
                 this.loadResult();
             }
         },
+    },
+    async created() {
+        this.patients = await API.getAllPatient();
     },
     methods: {
         previousStep() {
@@ -119,21 +131,75 @@ export default {
             const response = await API.addRecords(formData1);
             const formData2 = new FormData();
             formData2.append('record', response.recordId);
-            await API.updatePatientRecord(this.formData.patient,formData2);
+            await API.updatePatientRecord(this.formData.patient, formData2);
             this.$router.push({ name: "my_records", params: { message: response.message } })
         },
-        generate() {
-            html2canvas(this.$refs.pics, { useCORS: true }).then((canvas) => {
+        async generate() {
+            const pdfDoc = new jsPDF();
+            pdfDoc.setFont('helvetica', 'bold');
+            pdfDoc.setFontSize(24);
+            const titleText = 'Isokinetic Measurements Report';
+            const textWidth = pdfDoc.getTextWidth(titleText);
+            const pageWidth = pdfDoc.internal.pageSize.width;
+            const x = (pageWidth - textWidth) / 2;
+            pdfDoc.text(titleText, x, 20);
+
+            pdfDoc.setFontSize(14);
+            const subtitleText = 'General information';
+            pdfDoc.text(subtitleText, 20, 40);
+
+            const createdTime = new Date().toLocaleString();
+            pdfDoc.setFont('helvetica', 'normal');
+            pdfDoc.setFontSize(14);
+            const name = await this.getName(this.formData.patient);
+            pdfDoc.text(`Name: ${name}      Birth Date: ${this.patient_o.birthday}     Gender: ${this.patient_o.gender}`, 20, 50);
+            pdfDoc.text(`Created Time: ${createdTime}       Data Type: ${this.formData.dataType}`, 20, 60);
+            pdfDoc.text(`Joint: ${this.formData.joint}    Fit method: averaging     Velocity:${this.formData.velMax}`, 20, 70)
+            pdfDoc.line(20, 77, pageWidth - 20, 77);
+
+            pdfDoc.setFont('helvetica', 'bold');
+            pdfDoc.setFontSize(14);
+            pdfDoc.text("Result", 20, 87);
+
+            await html2canvas(this.$refs.pics, { useCORS: true }).then((canvas) => {
                 const imageData = canvas.toDataURL('image/png');
-                const pdfDoc = new jsPDF();
-                pdfDoc.addImage(imageData, 'PNG', 10, 10, 100, 100);
-                this.report = pdfDoc;
+                pdfDoc.addImage(imageData, 'PNG', 20, 100, 120, 90);
 
             });
+            pdfDoc.setFont('helvetica', 'normal');
+            pdfDoc.setFontSize(10);
+            pdfDoc.text("Quadriceps max point:", 131, 104);
+            pdfDoc.text(`The max torque is ${this.formData.maxTorque} at ${this.formData.maxTorqueAn} degree.`, 131, 109);
+
+            pdfDoc.text("Hamstring max point:", 131, 137);
+            pdfDoc.text(`The max torque is ${this.formData.minTorque} at ${this.formData.minTorqueAn} degree.`, 131, 142);
+
+            pdfDoc.line(20, 200, pageWidth - 20, 200);
+            pdfDoc.setFont('helvetica', 'bold');
+            pdfDoc.setFontSize(14);
+            pdfDoc.text("Added notes", 20, 210);
+            pdfDoc.setFont('helvetica', 'normal');
+            pdfDoc.setFontSize(14);
+
+            var paragraph = this.note;
+            var lines = pdfDoc.splitTextToSize(paragraph, 170);
+            pdfDoc.text(20, 220, lines);
+            // pdfDoc.text(this.note, 20, 220);
+
+
+            this.report = pdfDoc;
+
         },
-        download() {
-            this.generate();
+        async download() {
+            await this.generate();
             this.report.save('report.pdf');
+            this.dialog = false;
+        },
+        async getName(patientId) {
+            const targetPatient = await this.patients.find(obj => obj._id === patientId);
+            if (targetPatient == undefined) return 'Unknown';
+            this.patient_o = targetPatient;
+            return targetPatient.firstName.concat(" ", targetPatient.lastName) || 'Unknown';
         },
         loadResult() {
 
@@ -266,8 +332,19 @@ export default {
 
 
             // add the x and y axes to the chart
-            svg1.append('g').attr('class', 'x axis').attr('transform', `translate(0,${height})`).call(xAxis1);
-            svg1.append('g').attr('class', 'y axis').call(yAxis1);
+            svg1.append('g').attr('class', 'x axis').attr('transform', `translate(0,${height})`).call(xAxis1).append("text")
+                .style("fill", "black")
+                .attr('text-anchor', 'end')
+                .attr('x', width)
+                .attr('y', margin.bottom - 3)
+                .text('Angle (degree)');
+            svg1.append('g').attr('class', 'y axis').call(yAxis1).append("text")
+                .attr("text-anchor", "end")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left + 20)
+                .attr("x", -margin.top)
+                .attr("fill", "black")
+                .text("Torque (N*m)");
 
             // add the scatter points to the chart
             svg1.selectAll('circle')
@@ -290,8 +367,19 @@ export default {
                 .attr("fill", "none");
 
             // add the x and y axes to the chart
-            svg2.append('g').attr('class', 'x axis').attr('transform', `translate(0,${height})`).call(xAxis2);
-            svg2.append('g').attr('class', 'y axis').call(yAxis2);
+            svg2.append('g').attr('class', 'x axis').attr('transform', `translate(0,${height})`).call(xAxis2).append("text")
+                .style("fill", "black")
+                .attr('text-anchor', 'end')
+                .attr('x', width)
+                .attr('y', margin.bottom - 3)
+                .text('Angle (degree)');
+            svg2.append('g').attr('class', 'y axis').call(yAxis2).append("text")
+                .attr("text-anchor", "end")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left + 20)
+                .attr("x", -margin.top)
+                .attr("fill", "black")
+                .text("Torque (N*m)");
 
             // add the scatter points to the chart
             svg2
@@ -329,11 +417,24 @@ export default {
             // add the x-axis
             svg3.append("g")
                 .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(xScale3));
+                .call(d3.axisBottom(xScale3))
+                .append("text")
+                .style("fill", "black")
+                .attr('text-anchor', 'end')
+                .attr('x', width)
+                .attr('y', margin.bottom - 3)
+                .text('Angle (degree)');
 
             // add the y-axis
             svg3.append("g")
-                .call(d3.axisLeft(yScale3));
+                .call(d3.axisLeft(yScale3))
+                .append("text")
+                .attr("text-anchor", "end")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left + 20)
+                .attr("x", -margin.top)
+                .attr("fill", "black")
+                .text("Ratio");
 
 
         },

@@ -79,6 +79,10 @@ export default {
                 posAnats: [],
                 velocities: [],
                 velMax: 0,
+                maxTorque: '',
+                maxTorqueAn: '',
+                minTorque: '',
+                minTorqueAn: '',
             }
         }
     },

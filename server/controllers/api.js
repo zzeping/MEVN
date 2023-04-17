@@ -103,7 +103,7 @@ module.exports = class API {
         const id = req.params.id;
         try {
             const result = await Patient.findByIdAndDelete(id);
-            if (result.image != "") {
+            if (result.image != "" && result.image != "default_image.jpg") {
                 try {
                     fs.unlinkSync("./uploads/" + result.image);
                 } catch (err) {
@@ -118,8 +118,13 @@ module.exports = class API {
 
     static async createNewPatient(req, res) {
         const patient = req.body;
-        const imagename = req.file.filename;
-        patient.image = imagename;
+        if (!req.file) {
+            patient.image = "default_image.jpg";
+        } else {
+            const imagename = req.file.filename;
+            patient.image = imagename;
+        }
+
         try {
             await Patient.create(patient);
             res.status(201).json({ message: "Patient created successfully!" })
