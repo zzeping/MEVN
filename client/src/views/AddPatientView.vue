@@ -40,8 +40,9 @@
                                 <v-select v-model="gender" :items="genders" label="Gender" dense></v-select>
                             </v-col>
                         </v-row>
-                        <v-file-input @change="selectFile" show-size counter multiple
-                            label="Upload photo"></v-file-input>
+                        <!-- <v-file-input @change="selectFile" show-size counter multiple
+                            label="Upload photo"></v-file-input> -->
+                        <v-text-field v-model="patient.fileNumber" label="File Number"></v-text-field>
                         <v-btn type="submit" class="mt-3 white--text" color="#0f6e2f">Add Patient</v-btn>
                     </v-form>
                 </v-card>
@@ -74,6 +75,7 @@ export default {
                 image: "",
                 birthday: "",
                 gender: "",
+                fileNumber: "",
             },
             image: "",
             gender: "",
@@ -94,10 +96,11 @@ export default {
         
         async submitForm() {
             const formData = new FormData();
-            formData.append('image', this.image);
+            // formData.append('image', this.image);
             formData.append('firstName', this.patient.firstName);
             formData.append('lastName', this.patient.lastName);
             formData.append('email', this.patient.email);
+            formData.append('fileNumber', this.patient.fileNumber);
             const dt = new Date(this.date);
             formData.append('birthday', dt.toISOString().substr(0, 10));
             formData.append('gender', this.gender);

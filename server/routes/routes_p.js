@@ -33,8 +33,8 @@ const upload = multer()
 
 router.get('/', API.fetchAllPatients);
 router.get('/:id', API.fetchPatientByID);
-router.post('/', imageUpload, API.createNewPatient);
-router.patch('/:id', imageUpload, API.updatePatient);
+router.post('/', upload.none(), API.createNewPatient);
+router.patch('/:id', upload.none(), API.updatePatient);
 router.patch('/:id/record', upload.none(), API.updatePatientRecord);
 router.patch('/:id/record_r', upload.none(), API.removePatientRecord);
 router.delete('/:id', API.deletePatient);

@@ -7,9 +7,9 @@
                             mdi-arrow-left-bold-circle-outline
                         </v-icon></router-link>
                     <v-card-title>
-                        <v-avatar>
+                        <!-- <v-avatar>
                             <v-img :src="`/${patient.image}`"></v-img>
-                        </v-avatar>
+                        </v-avatar> -->
                         <p class="ml-3 mt-3 mr-2">{{ patient.firstName }} {{ patient.lastName }}</p>
                         <v-dialog v-model="dialog" max-width="500px">
                             <template v-slot:activator="{ on, attrs }">
@@ -40,6 +40,8 @@
                                             </v-row>
                                             <v-text-field v-model="changedPatient.email" :rules="emailRules" label="E-mail"
                                                 required></v-text-field>
+                                            <v-text-field v-model="changedPatient.fileNumber"
+                                                label="File Number"></v-text-field>
                                             <v-row class="d-flex align-center">
                                                 <v-col cols="12" md="6">
                                                     <v-menu ref="menu" v-model="menu" :close-on-content-click="false"
@@ -59,9 +61,9 @@
                                                         label="Gender" dense></v-select>
                                                 </v-col>
                                             </v-row>
-                                            <v-file-input @change="selectFile" show-size counter multiple
+                                            <!-- <v-file-input @change="selectFile" show-size counter multiple
                                                 label="Upload new photo"></v-file-input>
-                                            <v-img :src="`/${patient.image}`" width="50"></v-img>
+                                            <v-img :src="`/${patient.image}`" width="50"></v-img> -->
 
                                         </v-container>
                                     </v-card-text>
@@ -90,7 +92,15 @@
                         <div class="font-weight-bold ml-8 mb-2">
                             Gender: {{ patient.gender }}
                         </div>
+                        <div class="font-weight-bold ml-8 mb-2">
+                            File Number: {{ patient.fileNumber }}
+                        </div>
                     </v-card-text>
+                    <v-row no-gutters class="d-flex justify-end pb-3">
+                        <v-col class="d-flex justify-end" sm="8">
+                            <v-btn text color="primary" href="/steps">add record</v-btn>
+                        </v-col>
+                    </v-row>
                     <v-divider></v-divider>
                     <v-data-table :headers="headers" :items="records" class="elevation-1">
                         <template v-slot:item.actions="{ item }">
@@ -130,6 +140,7 @@ export default {
                 birthday: "",
                 gender: "",
                 records: "",
+                fileNumber: "",
             },
             changedPatient: {
                 firstName: "",
@@ -139,6 +150,7 @@ export default {
                 birthday: "",
                 gender: "",
                 records: "",
+                fileNumber: "",
             },
             headers: [
                 { text: 'Data Type', value: 'data_type' },
@@ -193,11 +205,12 @@ export default {
         },
         async updateForm() {
             const formData = new FormData();
-            formData.append("image", this.image);
-            formData.append("old_image", this.patient.image);
+            // formData.append("image", this.image);
+            // formData.append("old_image", this.patient.image);
             formData.append("firstName", this.changedPatient.firstName);
             formData.append("lastName", this.changedPatient.lastName);
             formData.append("email", this.changedPatient.email);
+            formData.append("fileNumber", this.changedPatient.fileNumber)
             const dt = new Date(this.date);
             console.log(dt.toISOString().substr(0, 10));
             formData.append('birthday', dt.toISOString().substr(0, 10));

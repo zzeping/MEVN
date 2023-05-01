@@ -16,11 +16,11 @@
         <v-text-field v-model="search" append-icon="mdi-magnify" label="Search" single-line hide-details></v-text-field>
       </v-card-title>
       <v-data-table :headers="headers" :items="patients" :search="search" class="elevation-1">
-        <template v-slot:item.image="{ item }">
+        <!-- <template v-slot:item.image="{ item }">
           <v-avatar>
             <v-img :src="`/${item.image}`"></v-img>
           </v-avatar>
-        </template>
+        </template> -->
         <template v-slot:item.actions="{ item }">
           <router-link style="text-decoration: none; color: inherit;"
             :to="{ name: 'patient', params: { id: item._id } }">
@@ -48,10 +48,11 @@ export default {
       search: '',
       patients: [],
       headers: [
-        { text: 'Patient', value: 'image' },
+        // { text: 'Patient', value: 'image' },
         { text: 'First Name', value: 'firstName' },
         { text: 'Last Name', value: 'lastName' },
         { text: 'Birthday', value: 'birthday' },
+        { text: 'File Number', value: 'fileNumber' },
         { text: 'Gender', value: 'gender' },
         { text: 'Email', value: 'email' },
         { text: 'Actions', value: 'actions', sortable: false },

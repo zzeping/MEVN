@@ -5,9 +5,10 @@ const patientSchema = mongoose.Schema({
     firstName: String,
     lastName: String,
     email: String,
-    image: String,
+    // image: String,
     birthday: String,
     gender: String,
+    fileNumber:String,
     records: [{
         type: String, ref: 'Record'
     }],

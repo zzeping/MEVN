@@ -48,20 +48,20 @@ module.exports = class API {
 
     static async updatePatient(req, res) {
         const id = req.params.id;
-        let new_image = "";
-        if (req.file) {
-            new_image = req.file.filename;
-            try {
-                fs.unlinkSync("./uploads/", + req.body.old_image);
-            } catch (err) {
-                console.log(err);
-            }
-        } else {
-            new_image = req.body.old_image;
-        }
+        // let new_image = "";
+        // if (req.file) {
+        //     new_image = req.file.filename;
+        //     try {
+        //         fs.unlinkSync("./uploads/", + req.body.old_image);
+        //     } catch (err) {
+        //         console.log(err);
+        //     }
+        // } else {
+        //     new_image = req.body.old_image;
+        // }
 
         const newPatient = req.body;
-        newPatient.image = new_image;
+        // newPatient.image = new_image;
         try {
             await Patient.findByIdAndUpdate(id, newPatient);
             res.status(200).json({ message: "Patient update successfully!" })
@@ -103,13 +103,13 @@ module.exports = class API {
         const id = req.params.id;
         try {
             const result = await Patient.findByIdAndDelete(id);
-            if (result.image != "" && result.image != "default_image.jpg") {
-                try {
-                    fs.unlinkSync("./uploads/" + result.image);
-                } catch (err) {
-                    console.log(err);
-                }
-            }
+            // if (result.image != "" && result.image != "default_image.jpg") {
+            //     try {
+            //         fs.unlinkSync("./uploads/" + result.image);
+            //     } catch (err) {
+            //         console.log(err);
+            //     }
+            // }
             res.status(200).json({ message: "Patient deleted successfully!" })
         } catch (err) {
             res.status(404).json({ message: err.message })
@@ -118,12 +118,12 @@ module.exports = class API {
 
     static async createNewPatient(req, res) {
         const patient = req.body;
-        if (!req.file) {
-            patient.image = "default_image.jpg";
-        } else {
-            const imagename = req.file.filename;
-            patient.image = imagename;
-        }
+        // if (!req.file) {
+        //     patient.image = "default_image.jpg";
+        // } else {
+        //     const imagename = req.file.filename;
+        //     patient.image = imagename;
+        // }
 
         try {
             await Patient.create(patient);
