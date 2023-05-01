@@ -54,13 +54,27 @@ export default {
     this.records = await API.getAllRecord();
     this.patients = await API.getAllPatient();
     this.processRecords();
-    this.new_records=this.records;
+    this.new_records = this.records;
   },
   methods: {
-    test(id) {
+    async test(id) {
       console.log(id);
+      const record = await API.getRecordByID(id);
+      const fileUrl = `/${record.report}`;
+      fetch(fileUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          window.open(url);
+        })
+        .catch(error => console.error(error));
+
     },
     async removeRecord(id) {
+      let record = await API.getRecordByID(id);
+      const formData1 = new FormData();
+      formData1.append("record", id);
+      await API.removePatientRecord(record.patient, formData1);
       const response = API.deleteRecord(id);
       this.$router.go();
     },
@@ -79,7 +93,7 @@ export default {
   }
 
 
-  }
+}
 </script>
   
   

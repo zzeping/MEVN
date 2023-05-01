@@ -94,7 +94,9 @@
                     <v-divider></v-divider>
                     <v-data-table :headers="headers" :items="records" class="elevation-1">
                         <template v-slot:item.actions="{ item }">
-
+                            <v-icon small class="mr-2">
+                                mdi-eye
+                            </v-icon>
                             <v-icon small @click="removeRecord(item._id)">
                                 mdi-delete
                             </v-icon>
@@ -139,7 +141,7 @@ export default {
                 records: "",
             },
             headers: [
-                { text: 'Report', value: 'report' },
+                { text: 'Data Type', value: 'data_type' },
                 { text: 'Joint', value: 'joint' },
                 { text: 'Test time', value: 'time' },
                 { text: 'Actions', value: 'actions', sortable: false },
@@ -171,7 +173,7 @@ export default {
         async removeRecord(id) {
             const formData1 = new FormData();
             formData1.append("record", id);
-            await API.removePatientRecord(this.$route.params.id,formData1);
+            await API.removePatientRecord(this.$route.params.id, formData1);
             const response = API.deleteRecord(id);
             this.$router.go();
         },

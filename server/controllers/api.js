@@ -144,6 +144,8 @@ module.exports = class API {
 
     static async createNewRecord(req, res) {
         const record = req.body;
+        const reportFile = req.file.filename;
+        record.report = reportFile; 
         try {
             const newRecord = await Record.create(record);
             res.status(201).json({ message: "Record created successfully!", recordId: newRecord._id });
@@ -165,6 +167,13 @@ module.exports = class API {
         const id = req.params.id;
         try {
             const result = await Record.findByIdAndDelete(id);
+            if (result.report != "") {
+                try {
+                    fs.unlinkSync("./uploads/" + result.report);
+                } catch (err) {
+                    console.log(err);
+                }
+            }
             res.status(200).json({ message: "Record deleted successfully!" })
         } catch (err) {
             res.status(404).json({ message: err.message })

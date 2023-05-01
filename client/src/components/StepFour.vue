@@ -68,6 +68,8 @@ export default {
             patients: '',
             patient_o: '',
             note: '',
+            doc: '',
+            blob: '',
         };
     },
     props: {
@@ -121,14 +123,14 @@ export default {
             d3.select(this.$refs.chart3).selectAll('g').remove();
         },
         async submit() {
-            this.generate();
+            await this.generate();
             const formData1 = new FormData();
             formData1.append('joint', this.formData.joint);
             formData1.append('time', this.formData.test_time);
             formData1.append('data_type', this.formData.dataType);
-            formData1.append('patient', this.formData.patient);
-            // formData.append('report', this.report, 'report.pdf');
-            const response = await API.addRecords(formData1);
+            formData1.append('patient', this.formData.patient); 
+            formData1.append('report', this.blob, 'report.pdf');
+            const response = await API.addRecords(formData1); 
             const formData2 = new FormData();
             formData2.append('record', response.recordId);
             await API.updatePatientRecord(this.formData.patient, formData2);
@@ -185,14 +187,14 @@ export default {
             var lines = pdfDoc.splitTextToSize(paragraph, 170);
             pdfDoc.text(20, 220, lines);
             // pdfDoc.text(this.note, 20, 220);
-
-
-            this.report = pdfDoc;
+            this.doc = pdfDoc;
+            this.report = pdfDoc.output('arraybuffer');
+            this.blob = pdfDoc.output('blob');
 
         },
         async download() {
             await this.generate();
-            this.report.save('report.pdf');
+            this.doc.save('report.pdf');
             this.dialog = false;
         },
         async getName(patientId) {
