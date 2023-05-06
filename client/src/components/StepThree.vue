@@ -19,21 +19,10 @@
                                     <v-text-field v-model="velMin" label="min velocity"></v-text-field>
                                 </v-col>
                             </v-row>
-                            <v-row class="text-center justify-center">
-                                <v-col md="3" class="d-flex justify-left py-0">
-                                    <v-text-field v-model="rom" label="ROM"></v-text-field>
-                                </v-col>
-                                <v-col md="3" class="d-flex justify-left py-0">
-                                    <v-text-field v-model="romTol" label="ROM tolerance"></v-text-field>
-                                </v-col>
-                                <v-col md="3" class="d-flex justify-left py-0">
-                                    <v-text-field v-model="torTol" label="torque tolerance"></v-text-field>
-                                </v-col>
-                            </v-row>
                         </v-col>
-                        <v-col class="d-flex align-center">
-                            <v-row class="text-center justify-start">
-                                <v-btn @click="redraw">select</v-btn>
+                        <v-col class="d-flex">
+                            <v-row class="text-center justify-start pt-3">
+                                <v-btn @click="redraw">apply</v-btn>
                             </v-row>
                         </v-col>
                     </v-row>
@@ -91,6 +80,13 @@ export default {
             rom: 0,
             velMax: 0,
             velMin: 0,
+            torquesArr_all: [],
+            timesArr_all: [],
+            posAnatsArr_all: [],
+            velocitiesArr_all: [],
+            indexArr_all: [],
+            selectedTrials: [],
+            initialStrokeColors: [],
         }
     },
     props: {
@@ -125,11 +121,12 @@ export default {
     },
     methods: {
         nextStep() {
+            this.select();
             this.formData.x_angle_h_m = this.posAnatsArr_h;
             this.formData.y_torq_h_m = this.torquesArr_h;
             this.formData.x_angle_q_m = this.posAnatsArr_q;
             this.formData.y_torq_q_m = this.torquesArr_q;
-            this.formData.viewResult = 1; 
+            this.formData.viewResult = 1;
             this.next();
         },
         previousStep() {
@@ -150,6 +147,13 @@ export default {
             this.velocitiesArr_q = [];
             this.posAnatsArr_h = [];
             this.posAnatsArr_q = [];
+            this.torquesArr_all = [];
+            this.timesArr_all = [];
+            this.posAnatsArr_all = [];
+            this.velocitiesArr_all = [];
+            this.indexArr_all = [];
+            this.initialStrokeColors = [];
+            this.selectedTrials = [];
             d3.select(this.$refs.chart1).selectAll('g').remove();
             d3.select(this.$refs.chart2).selectAll('g').remove();
             d3.select(this.$refs.chart3).selectAll('g').remove();
@@ -235,28 +239,196 @@ export default {
                     .x((d, i) => x(this.times[i]))
                     .y(d => y1(d))
                 );
+            let vm = this;
 
-            svg1.selectAll(".torques-h")
-                .data(this.torquesArr_h)
+            svg1.selectAll(".torques")
+                .data(this.torquesArr)
                 .enter()
                 .append("circle")
-                .attr("class", "torques-h")
-                .attr("cx", (d, i) => x(this.timesArr_h[i]))
+                .attr("class", "torques")
+                .attr("cx", (d, i) => x(this.timesArr[i]))
                 .attr("cy", d => y1(d))
                 .attr("r", 3)
-                .attr("stroke", "#73B9D7")
-                .attr("fill", "none");
+                .attr("stroke", "grey")
+                .attr("fill", "none")
+                .on("mouseover", function (d, i) {
+                    d3.select(this);
 
-            svg1.selectAll(".torques-q")
-                .data(this.torquesArr_q)
-                .enter()
-                .append("circle")
-                .attr("class", "torques-q")
-                .attr("cx", (d, i) => x(this.timesArr_q[i]))
-                .attr("cy", d => y1(d))
-                .attr("r", 3)
-                .attr("stroke", "#D79173")
-                .attr("fill", "none");
+                    var [mouseX, mouseY] = d3.pointer(event, this);
+                    var xVal = x.invert(mouseX);
+
+                    var closestIndex = 0;
+                    var closestDiff = Math.abs(xVal - vm.timesArr[0]);
+                    for (var i = 1; i < vm.timesArr.length; i++) {
+                        var diff = Math.abs(xVal - vm.timesArr[i]);
+                        if (diff < closestDiff) {
+                            closestIndex = i;
+                            closestDiff = diff;
+                        }
+                    }
+                    var closestTime = vm.timesArr[closestIndex];
+                    let pos = vm.timesArr.indexOf(closestTime);
+                    let section = vm.getSectionForIndex(pos);
+
+                    vm.initialStrokeColors = [];
+                    d3.selectAll(".torques").each(function (d, j) {
+                        vm.initialStrokeColors[j] = d3.select(this).attr("stroke");
+                    });
+
+                    d3.selectAll(".torques")
+                        .attr("stroke", (d, j) => {
+                            if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                return "red";
+                            } else {
+                                return vm.initialStrokeColors[j];
+                            }
+                        });
+                    d3.selectAll(".posAn")
+                        .attr("stroke", (d, j) => {
+                            if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                return "red";
+                            } else {
+                                return vm.initialStrokeColors[j];
+                            }
+                        });
+                    d3.selectAll(".velo")
+                        .attr("stroke", (d, j) => {
+                            if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                return "red";
+                            } else {
+                                return vm.initialStrokeColors[j];
+                            }
+                        });
+
+                })
+                .on("mouseout", function (d, i) {
+
+                    d3.select(this);
+
+                    var [mouseX, mouseY] = d3.pointer(event, this);
+                    var xVal = x.invert(mouseX);
+
+                    var closestIndex = 0;
+                    var closestDiff = Math.abs(xVal - vm.timesArr[0]);
+                    for (var i = 1; i < vm.timesArr.length; i++) {
+                        var diff = Math.abs(xVal - vm.timesArr[i]);
+                        if (diff < closestDiff) {
+                            closestIndex = i;
+                            closestDiff = diff;
+                        }
+                    }
+                    var closestTime = vm.timesArr[closestIndex];
+                    let pos = vm.timesArr.indexOf(closestTime);
+                    let section = vm.getSectionForIndex(pos);
+                    d3.selectAll(".torques")
+                        .attr("stroke", (d, j) => {
+                            return vm.initialStrokeColors[j];
+                        });
+                    d3.selectAll(".posAn")
+                        .attr("stroke", (d, j) => {
+                            return vm.initialStrokeColors[j];
+                        });
+                    d3.selectAll(".velo")
+                        .attr("stroke", (d, j) => {
+                            return vm.initialStrokeColors[j];
+                        });
+
+                })
+                .on("click", function (d, i) {
+                    d3.select(this);
+
+                    var [mouseX, mouseY] = d3.pointer(event, this);
+                    var xVal = x.invert(mouseX);
+
+                    var closestIndex = 0;
+                    var closestDiff = Math.abs(xVal - vm.timesArr[0]);
+                    for (var i = 1; i < vm.timesArr.length; i++) {
+                        var diff = Math.abs(xVal - vm.timesArr[i]);
+                        if (diff < closestDiff) {
+                            closestIndex = i;
+                            closestDiff = diff;
+                        }
+                    }
+                    var closestTime = vm.timesArr[closestIndex];
+                    let pos = vm.timesArr.indexOf(closestTime);
+                    let section = vm.getSectionForIndex(pos);
+
+                    if (vm.selectedTrials.includes(section)) {
+                        d3.selectAll(".torques")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "grey";
+                                    return "grey";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".posAn")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "grey";
+                                    return "grey";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".velo")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "grey";
+                                    return "grey";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        let index = vm.selectedTrials.indexOf(section);
+                        vm.selectedTrials.splice(index, 1);
+                    } else {
+                        d3.selectAll(".torques")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "#0f6e2f";
+                                    return "#0f6e2f";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".posAn")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "#0f6e2f";
+                                    return "#0f6e2f";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".velo")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "#0f6e2f";
+                                    return "#0f6e2f";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        vm.selectedTrials.push(section);
+
+                    }
+                    console.log(vm.selectedTrials)
+                });
+
+
+
+            // svg1.selectAll(".torques-q")
+            //     .data(this.torquesArr_q)
+            //     .enter()
+            //     .append("circle")
+            //     .attr("class", "torques-q")
+            //     .attr("cx", (d, i) => x(this.timesArr_q[i]))
+            //     .attr("cy", d => y1(d))
+            //     .attr("r", 3)
+            //     .attr("stroke", "#D79173")
+            //     .attr("fill", "none");
 
 
             svg2.append('g')
@@ -288,27 +460,192 @@ export default {
                     .y(d => y2(d))
                 );
 
-            svg2.selectAll(".posAn-h")
-                .data(this.posAnatsArr_h)
+            svg2.selectAll(".posAn")
+                .data(this.posAnatsArr)
                 .enter()
                 .append("circle")
-                .attr("class", "posAn-h")
-                .attr("cx", (d, i) => x(this.timesArr_h[i]))
+                .attr("class", "posAn")
+                .attr("cx", (d, i) => x(this.timesArr[i]))
                 .attr("cy", d => y2(d))
                 .attr("r", 3)
-                .attr("stroke", "#73B9D7")
-                .attr("fill", "none");
+                .attr("stroke", "grey")
+                .attr("fill", "none")
+                .on("mouseover", function (d, i) {
+                    d3.select(this);
 
-            svg2.selectAll(".posAn-q")
-                .data(this.posAnatsArr_q)
-                .enter()
-                .append("circle")
-                .attr("class", "posAn-q")
-                .attr("cx", (d, i) => x(this.timesArr_q[i]))
-                .attr("cy", d => y2(d))
-                .attr("r", 3)
-                .attr("stroke", "#D79173")
-                .attr("fill", "none");
+                    var [mouseX, mouseY] = d3.pointer(event, this);
+                    var xVal = x.invert(mouseX);
+
+                    var closestIndex = 0;
+                    var closestDiff = Math.abs(xVal - vm.timesArr[0]);
+                    for (var i = 1; i < vm.timesArr.length; i++) {
+                        var diff = Math.abs(xVal - vm.timesArr[i]);
+                        if (diff < closestDiff) {
+                            closestIndex = i;
+                            closestDiff = diff;
+                        }
+                    }
+                    var closestTime = vm.timesArr[closestIndex];
+                    let pos = vm.timesArr.indexOf(closestTime);
+                    let section = vm.getSectionForIndex(pos);
+
+                    vm.initialStrokeColors = [];
+                    d3.selectAll(".torques").each(function (d, j) {
+                        vm.initialStrokeColors[j] = d3.select(this).attr("stroke");
+                    });
+
+                    d3.selectAll(".torques")
+                        .attr("stroke", (d, j) => {
+                            if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                return "red";
+                            } else {
+                                return vm.initialStrokeColors[j];
+                            }
+                        });
+                    d3.selectAll(".posAn")
+                        .attr("stroke", (d, j) => {
+                            if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                return "red";
+                            } else {
+                                return vm.initialStrokeColors[j];
+                            }
+                        });
+                    d3.selectAll(".velo")
+                        .attr("stroke", (d, j) => {
+                            if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                return "red";
+                            } else {
+                                return vm.initialStrokeColors[j];
+                            }
+                        });
+
+                })
+                .on("mouseout", function (d, i) {
+
+                    d3.select(this);
+
+                    var [mouseX, mouseY] = d3.pointer(event, this);
+                    var xVal = x.invert(mouseX);
+
+                    var closestIndex = 0;
+                    var closestDiff = Math.abs(xVal - vm.timesArr[0]);
+                    for (var i = 1; i < vm.timesArr.length; i++) {
+                        var diff = Math.abs(xVal - vm.timesArr[i]);
+                        if (diff < closestDiff) {
+                            closestIndex = i;
+                            closestDiff = diff;
+                        }
+                    }
+                    var closestTime = vm.timesArr[closestIndex];
+                    let pos = vm.timesArr.indexOf(closestTime);
+                    let section = vm.getSectionForIndex(pos);
+                    d3.selectAll(".torques")
+                        .attr("stroke", (d, j) => {
+                            return vm.initialStrokeColors[j];
+                        });
+                    d3.selectAll(".posAn")
+                        .attr("stroke", (d, j) => {
+                            return vm.initialStrokeColors[j];
+                        });
+                    d3.selectAll(".velo")
+                        .attr("stroke", (d, j) => {
+                            return vm.initialStrokeColors[j];
+                        });
+
+                })
+                .on("click", function (d, i) {
+                    d3.select(this);
+
+                    var [mouseX, mouseY] = d3.pointer(event, this);
+                    var xVal = x.invert(mouseX);
+
+                    var closestIndex = 0;
+                    var closestDiff = Math.abs(xVal - vm.timesArr[0]);
+                    for (var i = 1; i < vm.timesArr.length; i++) {
+                        var diff = Math.abs(xVal - vm.timesArr[i]);
+                        if (diff < closestDiff) {
+                            closestIndex = i;
+                            closestDiff = diff;
+                        }
+                    }
+                    var closestTime = vm.timesArr[closestIndex];
+                    let pos = vm.timesArr.indexOf(closestTime);
+                    let section = vm.getSectionForIndex(pos);
+
+                    if (vm.selectedTrials.includes(section)) {
+                        d3.selectAll(".torques")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "grey";
+                                    return "grey";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".posAn")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "grey";
+                                    return "grey";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".velo")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "grey";
+                                    return "grey";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        let index = vm.selectedTrials.indexOf(section);
+                        vm.selectedTrials.splice(index, 1);
+                    } else {
+                        d3.selectAll(".torques")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "#0f6e2f";
+                                    return "#0f6e2f";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".posAn")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "#0f6e2f";
+                                    return "#0f6e2f";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".velo")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "#0f6e2f";
+                                    return "#0f6e2f";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        vm.selectedTrials.push(section);
+
+                    }
+                    console.log(vm.selectedTrials)
+                });
+
+            // svg2.selectAll(".posAn-q")
+            //     .data(this.posAnatsArr_q)
+            //     .enter()
+            //     .append("circle")
+            //     .attr("class", "posAn-q")
+            //     .attr("cx", (d, i) => x(this.timesArr_q[i]))
+            //     .attr("cy", d => y2(d))
+            //     .attr("r", 3)
+            //     .attr("stroke", "#D79173")
+            //     .attr("fill", "none");
 
             svg3.append('g')
                 .attr('transform', `translate(0, ${height})`)
@@ -339,42 +676,217 @@ export default {
                     .x((d, i) => x(this.times[i]))
                     .y(d => y3(d))
                 );
-            svg3.selectAll(".velo-h")
-                .data(this.velocitiesArr_h)
+            svg3.selectAll(".velo")
+                .data(this.velocitiesArr)
                 .enter()
                 .append("circle")
-                .attr("class", "velo-h")
-                .attr("cx", (d, i) => x(this.timesArr_h[i]))
+                .attr("class", "velo")
+                .attr("cx", (d, i) => x(this.timesArr[i]))
                 .attr("cy", d => y3(d))
                 .attr("r", 3)
-                .attr("stroke", "#73B9D7")
-                .attr("fill", "none");
+                .attr("stroke", "grey")
+                .attr("fill", "none")
+                .on("mouseover", function (d, i) {
+                    d3.select(this);
 
-            svg3.selectAll(".velo-q")
-                .data(this.velocitiesArr_q)
-                .enter()
-                .append("circle")
-                .attr("class", "velo-q")
-                .attr("cx", (d, i) => x(this.timesArr_q[i]))
-                .attr("cy", d => y3(d))
-                .attr("r", 3)
-                .attr("stroke", "#D79173")
-                .attr("fill", "none");
+                    var [mouseX, mouseY] = d3.pointer(event, this);
+                    var xVal = x.invert(mouseX);
 
+                    var closestIndex = 0;
+                    var closestDiff = Math.abs(xVal - vm.timesArr[0]);
+                    for (var i = 1; i < vm.timesArr.length; i++) {
+                        var diff = Math.abs(xVal - vm.timesArr[i]);
+                        if (diff < closestDiff) {
+                            closestIndex = i;
+                            closestDiff = diff;
+                        }
+                    }
+                    var closestTime = vm.timesArr[closestIndex];
+                    let pos = vm.timesArr.indexOf(closestTime);
+                    let section = vm.getSectionForIndex(pos);
+
+                    vm.initialStrokeColors = [];
+                    d3.selectAll(".torques").each(function (d, j) {
+                        vm.initialStrokeColors[j] = d3.select(this).attr("stroke");
+                    });
+
+                    d3.selectAll(".torques")
+                        .attr("stroke", (d, j) => {
+                            if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                return "red";
+                            } else {
+                                return vm.initialStrokeColors[j];
+                            }
+                        });
+                    d3.selectAll(".posAn")
+                        .attr("stroke", (d, j) => {
+                            if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                return "red";
+                            } else {
+                                return vm.initialStrokeColors[j];
+                            }
+                        });
+                    d3.selectAll(".velo")
+                        .attr("stroke", (d, j) => {
+                            if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                return "red";
+                            } else {
+                                return vm.initialStrokeColors[j];
+                            }
+                        });
+
+                })
+                .on("mouseout", function (d, i) {
+
+                    d3.select(this);
+
+                    var [mouseX, mouseY] = d3.pointer(event, this);
+                    var xVal = x.invert(mouseX);
+
+                    var closestIndex = 0;
+                    var closestDiff = Math.abs(xVal - vm.timesArr[0]);
+                    for (var i = 1; i < vm.timesArr.length; i++) {
+                        var diff = Math.abs(xVal - vm.timesArr[i]);
+                        if (diff < closestDiff) {
+                            closestIndex = i;
+                            closestDiff = diff;
+                        }
+                    }
+                    var closestTime = vm.timesArr[closestIndex];
+                    let pos = vm.timesArr.indexOf(closestTime);
+                    let section = vm.getSectionForIndex(pos);
+                    d3.selectAll(".torques")
+                        .attr("stroke", (d, j) => {
+                            return vm.initialStrokeColors[j];
+                        });
+                    d3.selectAll(".posAn")
+                        .attr("stroke", (d, j) => {
+                            return vm.initialStrokeColors[j];
+                        });
+                    d3.selectAll(".velo")
+                        .attr("stroke", (d, j) => {
+                            return vm.initialStrokeColors[j];
+                        });
+
+                })
+                .on("click", function (d, i) {
+                    d3.select(this);
+
+                    var [mouseX, mouseY] = d3.pointer(event, this);
+                    var xVal = x.invert(mouseX);
+
+                    var closestIndex = 0;
+                    var closestDiff = Math.abs(xVal - vm.timesArr[0]);
+                    for (var i = 1; i < vm.timesArr.length; i++) {
+                        var diff = Math.abs(xVal - vm.timesArr[i]);
+                        if (diff < closestDiff) {
+                            closestIndex = i;
+                            closestDiff = diff;
+                        }
+                    }
+                    var closestTime = vm.timesArr[closestIndex];
+                    let pos = vm.timesArr.indexOf(closestTime);
+                    let section = vm.getSectionForIndex(pos);
+
+                    if (vm.selectedTrials.includes(section)) {
+                        d3.selectAll(".torques")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "grey";
+                                    return "grey";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".posAn")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "grey";
+                                    return "grey";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".velo")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "grey";
+                                    return "grey";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        let index = vm.selectedTrials.indexOf(section);
+                        vm.selectedTrials.splice(index, 1);
+                    } else {
+                        d3.selectAll(".torques")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "#0f6e2f";
+                                    return "#0f6e2f";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".posAn")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "#0f6e2f";
+                                    return "#0f6e2f";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        d3.selectAll(".velo")
+                            .attr("stroke", (d, j) => {
+                                if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
+                                    vm.initialStrokeColors[j] = "#0f6e2f";
+                                    return "#0f6e2f";
+                                } else {
+                                    return vm.initialStrokeColors[j];
+                                }
+                            });
+                        vm.selectedTrials.push(section);
+
+                    }
+                });
+
+            // svg3.selectAll(".velo-q")
+            //     .data(this.velocitiesArr_q)
+            //     .enter()
+            //     .append("circle")
+            //     .attr("class", "velo-q")
+            //     .attr("cx", (d, i) => x(this.timesArr_q[i]))
+            //     .attr("cy", d => y3(d))
+            //     .attr("r", 3)
+            //     .attr("stroke", "#D79173")
+            //     .attr("fill", "none");
+
+        },
+        getSectionForIndex(index) {
+            for (let i = 0; i < this.sectionPoints.length - 1; i += 2) {
+                let sectionStart = this.sectionPoints[i];
+                let sectionEnd = this.sectionPoints[i + 1];
+                if (index >= sectionStart && index <= sectionEnd) {
+                    return i;
+                }
+            }
+            // The index is in the last section
+            return this.sectionPoints.length - 1;
         },
 
         applyFiltering(type) {
-
+            console.log(this.velocities)
             // apply velocity filter
             let velocityLimits = [];
             velocityLimits[0] = Number(this.velMax) + Math.abs(this.velMax * this.velTol);
             velocityLimits[1] = Number(this.velMax) - Math.abs(this.velMax * this.velTol);
             velocityLimits[2] = Number(this.velMin) + Math.abs(this.velMin * this.velTol);
             velocityLimits[3] = Number(this.velMin) - Math.abs(this.velMin * this.velTol);
-            
+
             for (let i = 0; i < this.times.length; i++) {
-                if ((this.velocities[i] <= velocityLimits[0] && this.velocities[i] >= velocityLimits[1]) ||
-                    (this.velocities[i] <= velocityLimits[2] && this.velocities[i] >= velocityLimits[3])) {
+                if ((this.velocities[i] >= velocityLimits[1]) ||
+                    (this.velocities[i] <= velocityLimits[2])) {
                     this.torquesArr.push(this.torques[i]);
                     this.timesArr.push(this.times[i]);
                     this.posAnatsArr.push(this.posAnats[i]);
@@ -383,206 +895,53 @@ export default {
                 }
             }
             this.creatSectionData();
-            // filter according to specified range of angle motion: 80 for concentric; 65 for eccentric 
-            for (let i = this.numSections * 2 - 1; i >= 0; i -= 2) {
-                if (Math.abs(this.posAnatsArr[this.sectionPoints[i - 1]] - this.posAnatsArr[this.sectionPoints[i]]) < this.rom) {
-                    this.indexArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
-                    this.posAnatsArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
-                    this.timesArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
-                    this.torquesArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
-                    this.velocitiesArr.splice(this.sectionPoints[i - 1], this.sectionPoints[i] - this.sectionPoints[i - 1] + 1);
-                }
-            }
-            this.creatSectionData();
-
-            // remove false datasets where vel pos and torque neg, and vice versa
-            let len = this.indexArr.length;
-            if (type === "concentric") {
-                for (let i = 0; i < len; i++) {
-                    if ((this.velocitiesArr[i] < 0 && this.torquesArr[i] >= 0) ||
-                        (this.velocitiesArr[i] > 0 && this.torquesArr[i] <= 0)) {
-                        this.torquesArr.splice(i, 1);
-                        this.timesArr.splice(i, 1);
-                        this.posAnatsArr.splice(i, 1);
-                        this.velocitiesArr.splice(i, 1);
-                        this.indexArr.splice(i, 1);
-                        i--; // decrement i to check the same index again in the next iteration
-                        len--; // decrement len to account for the removed element
-                    }
-                }
-            } else {
-                for (let i = 0; i < len; i++) {
-                    if (this.velocitiesArr[i] < 0) {
-                        this.torquesArr.splice(i, 1);
-                        this.timesArr.splice(i, 1);
-                        this.posAnatsArr.splice(i, 1);
-                        this.velocitiesArr.splice(i, 1);
-                        this.indexArr.splice(i, 1);
-                        i--; // decrement i to check the same index again in the next iteration
-                        len--; // decrement len to account for the removed element
-                    }
-                }
-            }
-
-            this.creatSectionData();
-
-            //Filter according to the torque tolerance
-            if (type === "concentric") {
-                //for hamstring 
-                let hamIndices = [];
-                for (let i = 0; i < this.numSections * 2; i += 2) {
-                    if (this.posAnatsArr[this.sectionPoints[i]] < this.posAnatsArr[this.sectionPoints[i + 1]]) {
-                        hamIndices.push(this.sectionPoints[i], this.sectionPoints[i + 1]);
-                    }
-                }
-                this.updateMinMax();
-                //For each section in hamIndices, the code checks if the minimum torque in that section is 
-                //within 10% of the minimum torque of the entire dataset.
-                for (let i = hamIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.min(...this.torquesArr.slice(hamIndices[i - 1], hamIndices[i] + 1)) > (1 - this.torTol) * this.minTorque) {
-                        this.indexArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.timesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.velocitiesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.torquesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.posAnatsArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        hamIndices.splice(i - 1, 2);
-                    }
-                }
-                this.updateMinMax();
-
-                //Filter according to range of motion wrt max torque peak.
-                //Get ROM for max hamstring peak
-                let maxROMHam = 0;
-                for (let i = hamIndices.length - 1; i >= 1; i -= 2) {
-                    if (hamIndices[i - 1] < this.minIndex && hamIndices[i] > this.minIndex) {
-                        maxROMHam = Math.abs(this.posAnatsArr[hamIndices[i]] - this.posAnatsArr[hamIndices[i - 1]]);
-                        break;
-                    }
-                }
-
-                //Discard sections where outside tolerance wrt max ROM
-                for (let i = hamIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.abs(this.posAnatsArr[hamIndices[i]] - this.posAnatsArr[hamIndices[i - 1]]) < (1 - this.romTol) * maxROMHam) {
-                        this.indexArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.timesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.velocitiesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.posAnatsArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.torquesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        hamIndices.splice(i, 1);
-                        hamIndices.splice(i - 1, 1);
-                    }
-                }
-
-                for (let i = 0; i < hamIndices.length; i += 2) {
-                    this.torquesArr_h.push(...this.torquesArr.slice(hamIndices[i], hamIndices[i + 1] + 1));
-                    this.timesArr_h.push(...this.timesArr.slice(hamIndices[i], hamIndices[i + 1] + 1));
-                    this.posAnatsArr_h.push(...this.posAnatsArr.slice(hamIndices[i], hamIndices[i + 1] + 1));
-                    this.velocitiesArr_h.push(...this.velocitiesArr.slice(hamIndices[i], hamIndices[i + 1] + 1));
-                }
-
-                this.creatSectionData();
-                // repeat for quadriceps
-                let quadIndices = [];
-                for (let i = 0; i < this.numSections * 2; i += 2) {
-                    if (this.posAnatsArr[this.sectionPoints[i]] > this.posAnatsArr[this.sectionPoints[i + 1]]) {
-                        quadIndices.push(this.sectionPoints[i], this.sectionPoints[i + 1]);
-                    }
-                }
-                this.updateMinMax();
-                //For each section in quadIndices, the code checks if the max torque in that section is 
-                //within 10% of the max torque of the entire dataset.
-                for (let i = quadIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.max(...this.torquesArr.slice(quadIndices[i - 1], quadIndices[i] + 1)) < (1 - this.torTol) * this.maxTorque) {
-                        this.indexArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
-                        this.timesArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
-                        this.velocitiesArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
-                        this.torquesArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
-                        this.posAnatsArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
-                        quadIndices.splice(i - 1, 2);
-                    }
-                }
-                this.updateMinMax();
-
-                //Filter according to range of motion wrt max torque peak.
-                //Get ROM for max quads peak
-                let maxROMQuad = 0;
-                for (let i = quadIndices.length - 1; i >= 1; i -= 2) {
-                    if (quadIndices[i - 1] < this.maxIndex && quadIndices[i] > this.maxIndex) {
-                        maxROMQuad = Math.abs(this.posAnatsArr[quadIndices[i]] - this.posAnatsArr[quadIndices[i - 1]]);
-                        break;
-                    }
-                }
-                //Discard sections where outside tolerance wrt max ROM
-                for (let i = quadIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.abs(this.posAnatsArr[quadIndices[i]] - this.posAnatsArr[quadIndices[i - 1]]) < (1 - this.romTol) * maxROMQuad) {
-                        this.indexArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
-                        this.timesArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
-                        this.velocitiesArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
-                        this.posAnatsArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
-                        this.torquesArr.splice(quadIndices[i - 1], quadIndices[i] - quadIndices[i - 1] + 1);
-                        quadIndices.splice(i, 1);
-                        quadIndices.splice(i - 1, 1);
-                    }
-                    
-                    
-                }
-                for (let i = 0; i < quadIndices.length; i += 2) {
-                    this.torquesArr_q.push(...this.torquesArr.slice(quadIndices[i], quadIndices[i + 1] + 1));
-                    this.timesArr_q.push(...this.timesArr.slice(quadIndices[i], quadIndices[i + 1] + 1));
-                    this.posAnatsArr_q.push(...this.posAnatsArr.slice(quadIndices[i], quadIndices[i + 1] + 1));
-                    this.velocitiesArr_q.push(...this.velocitiesArr.slice(quadIndices[i], quadIndices[i + 1] + 1));
-                }
-
-            } else {
-                let hamIndices = this.sectionPoints;
-                this.minTorque = Math.min(...this.torquesArr);
-                this.minIndex = this.torquesArr.indexOf(this.minTorque);
-                for (let i = hamIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.min(...this.torquesArr.slice(hamIndices[i - 1], hamIndices[i] + 1)) > (1 - this.torTol) * this.minTorque) {
-                        this.indexArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.timesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.velocitiesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.torquesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.posAnatsArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        hamIndices.splice(i - 1, 2);
-                    }
-                }
-                this.minTorque = Math.min(...this.torquesArr);
-                this.minIndex = this.torquesArr.indexOf(this.minTorque);
-
-                let maxROMHam = 0;
-                for (let i = hamIndices.length - 1; i >= 1; i -= 2) {
-                    if (hamIndices[i - 1] < this.minIndex && hamIndices[i] > this.minIndex) {
-                        maxROMHam = Math.abs(this.posAnatsArr[hamIndices[i]] - this.posAnatsArr[hamIndices[i - 1]]);
-                        break;
-                    }
-                }
-
-                for (let i = hamIndices.length - 1; i >= 1; i -= 2) {
-                    if (Math.abs(this.posAnatsArr[hamIndices[i]] - this.posAnatsArr[hamIndices[i - 1]]) < (1 - this.romTol) * maxROMHam) {
-                        this.indexArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.timesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.velocitiesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.posAnatsArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        this.torquesArr.splice(hamIndices[i - 1], hamIndices[i] - hamIndices[i - 1] + 1);
-                        hamIndices.splice(i, 1);
-                        hamIndices.splice(i - 1, 1);
-                    }
-                }
-
-            }
         },
-        updateMinMax() {
-            this.maxTorque = Math.max(...this.torquesArr);
-            this.maxIndex = this.torquesArr.indexOf(this.maxTorque);
-            this.minTorque = Math.min(...this.torquesArr);
-            this.minIndex = this.torquesArr.indexOf(this.minTorque);
+
+        select() {
+            this.selectedTrials.sort((a, b) => a - b);
+            // for (let i = 0; i < this.selectedTrials.length; i++) {
+            //     this.indexArr_all.push(...this.indexArr.slice(this.sectionPoints[this.selectedTrials[i]], this.sectionPoints[this.selectedTrials[i] + 1] + 1));
+            //     this.torquesArr_all.push(...this.torquesArr.slice(this.sectionPoints[this.selectedTrials[i]], this.sectionPoints[this.selectedTrials[i] + 1] + 1));
+            //     this.timesArr_all.push(...this.timesArr.slice(this.sectionPoints[this.selectedTrials[i]], this.sectionPoints[this.selectedTrials[i] + 1] + 1));
+            //     this.posAnatsArr_all.push(...this.posAnatsArr.slice(this.sectionPoints[this.selectedTrials[i]], this.sectionPoints[this.selectedTrials[i] + 1] + 1));
+            //     this.velocitiesArr_all.push(...this.velocitiesArr.slice(this.sectionPoints[this.selectedTrials[i]], this.sectionPoints[this.selectedTrials[i] + 1] + 1));
+            // };
+            console.log(this.selectedTrials)
+            let hamIndices = [];
+            for (let i = 0; i < this.selectedTrials.length; i++) {
+                if (this.posAnatsArr[this.sectionPoints[this.selectedTrials[i]]] < this.posAnatsArr[this.sectionPoints[this.selectedTrials[i] + 1]]) {
+                    hamIndices.push(this.sectionPoints[this.selectedTrials[i]], this.sectionPoints[this.selectedTrials[i] + 1]);
+                }
+            };
+            for (let i = 0; i < hamIndices.length; i += 2) {
+                this.torquesArr_h.push(...this.torquesArr.slice(hamIndices[i], hamIndices[i + 1] + 1));
+                this.timesArr_h.push(...this.timesArr.slice(hamIndices[i], hamIndices[i + 1] + 1));
+                this.posAnatsArr_h.push(...this.posAnatsArr.slice(hamIndices[i], hamIndices[i + 1] + 1));
+                this.velocitiesArr_h.push(...this.velocitiesArr.slice(hamIndices[i], hamIndices[i + 1] + 1));
+            };
+            let quadIndices = [];
+            for (let i = 0; i < this.selectedTrials.length; i++) {
+                if (this.posAnatsArr[this.sectionPoints[this.selectedTrials[i]]] > this.posAnatsArr[this.sectionPoints[this.selectedTrials[i] + 1]]) {
+                    quadIndices.push(this.sectionPoints[this.selectedTrials[i]], this.sectionPoints[this.selectedTrials[i] + 1]);
+                }
+            };
+            for (let i = 0; i < quadIndices.length; i += 2) {
+                this.torquesArr_q.push(...this.torquesArr.slice(quadIndices[i], quadIndices[i + 1] + 1));
+                this.timesArr_q.push(...this.timesArr.slice(quadIndices[i], quadIndices[i + 1] + 1));
+                this.posAnatsArr_q.push(...this.posAnatsArr.slice(quadIndices[i], quadIndices[i + 1] + 1));
+                this.velocitiesArr_q.push(...this.velocitiesArr.slice(quadIndices[i], quadIndices[i + 1] + 1));
+            };
+            console.log(hamIndices)
+            console.log(quadIndices)
+
         },
 
         // create section data, sectionPoints stores the starts and ends of all sections. 
         creatSectionData() {
             this.numSections = 1;
             this.sectionPoints = [0];
+            console.log(this.indexArr)
+            console.log(this.velocitiesArr)
             //Look for non-contiguous values in the index column
             for (let i = 0; i < this.indexArr.length - 1; i++) {
                 while (this.indexArr[i + 1] - this.indexArr[i] !== 1) {
@@ -592,6 +951,8 @@ export default {
                 }
             }
             this.sectionPoints.push(this.indexArr.length - 1);
+            console.log(this.numSections)
+            console.log(this.sectionPoints);
         },
 
     }
