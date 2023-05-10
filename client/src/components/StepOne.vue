@@ -8,6 +8,18 @@
                         <v-divider></v-divider>
                         <v-row class="pt-5">
                             <v-col cols="12" md="6">
+                                <v-select :rules="rules" @change="changePatient" v-model="patient" :items="filteredPatients"
+                                    :item-text="concatenatedText" item-value="_id" label="Select the patient"
+                                    :filterable="true">
+                                    <template v-slot:item="{ item }">
+                                        <div>
+                                            <div>{{ item.firstName }} {{ item.lastName }} - {{ item.email }}</div>
+                                        </div>
+                                    </template>
+                                </v-select>
+                            </v-col>
+
+                            <v-col cols="12" md="6">
                                 <v-text-field v-model="searchQuery" label="Search a patient" clearable>
                                     <template v-slot:append>
                                         <v-tooltip bottom>
@@ -18,18 +30,6 @@
                                         </v-tooltip>
                                     </template>
                                 </v-text-field>
-                            </v-col>
-
-                            <v-col cols="12" md="6">
-                                <v-select :rules="rules" @change="changePatient" v-model="patient" :items="filteredPatients"
-                                    :item-text="concatenatedText" item-value="_id" label="Select the patient"
-                                    :filterable="true">
-                                    <template v-slot:item="{ item }">
-                                        <div>
-                                            <div>{{ item.firstName }} {{ item.lastName }} - {{ item.email }}</div>
-                                        </div>
-                                    </template>
-                                </v-select>
                             </v-col>
                         </v-row>
                         <v-row>

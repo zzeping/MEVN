@@ -85,12 +85,12 @@ export default {
             this.clearChart();
             if (this.formData.manual == 1) {
                 this.x_h = this.formData.x_angle_h_m;
-                this.y_h = this.formData.y_torq_h_m;
+                this.y_h = this.formData.y_torq_h_m.map(number => -number);
                 this.x_q = this.formData.x_angle_q_m;
                 this.y_q = this.formData.y_torq_q_m;
             } else {
                 this.x_h = this.formData.x_angle_h;
-                this.y_h = this.formData.y_torq_h;
+                this.y_h = this.formData.y_torq_h.map(number => -number);
                 this.x_q = this.formData.x_angle_q;
                 this.y_q = this.formData.y_torq_q;
             }
@@ -344,9 +344,9 @@ export default {
                 .attr("text-anchor", "end")
                 .attr("transform", "rotate(-90)")
                 .attr("y", -margin.left + 20)
-                .attr("x", -margin.top)
+                .attr("x", -margin.top+8)
                 .attr("fill", "black")
-                .text("Torque (N*m)");
+                .text("Hamstrings Torque (N*m)");
 
             // add the scatter points to the chart
             svg1.selectAll('circle')
@@ -379,9 +379,9 @@ export default {
                 .attr("text-anchor", "end")
                 .attr("transform", "rotate(-90)")
                 .attr("y", -margin.left + 20)
-                .attr("x", -margin.top)
+                .attr("x", -margin.top+8)
                 .attr("fill", "black")
-                .text("Torque (N*m)");
+                .text("Quadricep Torque (N*m)");
 
             // add the scatter points to the chart
             svg2

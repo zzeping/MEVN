@@ -22,7 +22,7 @@
                         </v-col>
                         <v-col class="d-flex">
                             <v-row class="text-center justify-start pt-3">
-                                <v-btn @click="redraw">apply</v-btn>
+                                <v-btn @click="redraw">apply velocity</v-btn>
                             </v-row>
                         </v-col>
                     </v-row>
