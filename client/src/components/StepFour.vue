@@ -54,6 +54,9 @@ import * as d3 from "d3";
 import jsPDF from "jspdf";
 import * as html2canvas from "html2canvas";
 import API from '@/api';
+import loess from 'loess';
+
+
 
 
 export default {
@@ -128,9 +131,9 @@ export default {
             formData1.append('joint', this.formData.joint);
             formData1.append('time', this.formData.test_time);
             formData1.append('data_type', this.formData.dataType);
-            formData1.append('patient', this.formData.patient); 
+            formData1.append('patient', this.formData.patient);
             formData1.append('report', this.blob, 'report.pdf');
-            const response = await API.addRecords(formData1); 
+            const response = await API.addRecords(formData1);
             const formData2 = new FormData();
             formData2.append('record', response.recordId);
             await API.updatePatientRecord(this.formData.patient, formData2);
@@ -242,7 +245,14 @@ export default {
             if (averagedXh[averagedXh.length - 1] - averagedXh[0] + 1 == averagedXh.length) {
                 averagedYh = this.moving(averagedYh, 10);
             } else {
-                console.log("lowess")
+                const data = {
+                    y: averagedYh,
+                    x: averagedXh,
+                };
+                var options = { span: 0.5, band: 0.8, degree: 1 }
+                var model = new loess(data, options)
+                var fit = model.predict();
+                averagedYh = fit.fitted;
             }
             let avg_h = averagedXh.map(function (d, i) { return { x: d, y: averagedYh[i] }; });
 
@@ -278,12 +288,16 @@ export default {
             if (averagedXq[averagedXq.length - 1] - averagedXq[0] + 1 == averagedXq.length) {
                 averagedYq = this.moving(averagedYq, 10);
             } else {
-                console.log("lowess")
+                const data = {
+                    y: averagedYq,
+                    x: averagedXq,
+                };
+                var options = { span: 0.5, band: 0.8, degree: 1 }
+                var model = new loess(data, options)
+                var fit = model.predict();
+                averagedYq = fit.fitted;
             }
             let avg_q = averagedXq.map(function (d, i) { return { x: d, y: averagedYq[i] }; });
-            console.log(averagedYh)
-            console.log(avg_h)
-
             var commonX = [];
             var ratio = [];
 
@@ -344,7 +358,7 @@ export default {
                 .attr("text-anchor", "end")
                 .attr("transform", "rotate(-90)")
                 .attr("y", -margin.left + 20)
-                .attr("x", -margin.top+8)
+                .attr("x", -margin.top + 8)
                 .attr("fill", "black")
                 .text("Hamstrings Torque (N*m)");
 
@@ -379,7 +393,7 @@ export default {
                 .attr("text-anchor", "end")
                 .attr("transform", "rotate(-90)")
                 .attr("y", -margin.left + 20)
-                .attr("x", -margin.top+8)
+                .attr("x", -margin.top + 8)
                 .attr("fill", "black")
                 .text("Quadricep Torque (N*m)");
 

@@ -898,6 +898,14 @@ export default {
         },
 
         select() {
+            this.torquesArr_h = [];
+            this.timesArr_h = [];
+            this.posAnatsArr_h = [];
+            this.velocitiesArr_h = [];
+            this.torquesArr_q = [];
+            this.timesArr_q = [];
+            this.posAnatsArr_q = [];
+            this.velocitiesArr_q = [];
             this.selectedTrials.sort((a, b) => a - b);
             // for (let i = 0; i < this.selectedTrials.length; i++) {
             //     this.indexArr_all.push(...this.indexArr.slice(this.sectionPoints[this.selectedTrials[i]], this.sectionPoints[this.selectedTrials[i] + 1] + 1));
@@ -931,8 +939,6 @@ export default {
                 this.posAnatsArr_q.push(...this.posAnatsArr.slice(quadIndices[i], quadIndices[i + 1] + 1));
                 this.velocitiesArr_q.push(...this.velocitiesArr.slice(quadIndices[i], quadIndices[i + 1] + 1));
             };
-            console.log(hamIndices)
-            console.log(quadIndices)
 
         },
 
