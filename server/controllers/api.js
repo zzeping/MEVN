@@ -146,6 +146,8 @@ module.exports = class API {
         const record = req.body;
         const reportFile = req.file.filename;
         record.report = reportFile; 
+        record.hamstring = JSON.parse(record.hamstring);
+        record.quadricep = JSON.parse(record.quadricep);
         try {
             const newRecord = await Record.create(record);
             res.status(201).json({ message: "Record created successfully!", recordId: newRecord._id });

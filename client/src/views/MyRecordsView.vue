@@ -75,7 +75,7 @@ export default {
       const formData1 = new FormData();
       formData1.append("record", id);
       await API.removePatientRecord(record.patient, formData1);
-      const response = API.deleteRecord(id);
+      const response = await API.deleteRecord(id);
       this.$router.go();
     },
     async getFirstName(patientId) {

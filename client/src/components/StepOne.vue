@@ -147,6 +147,8 @@ export default {
 
     },
     mounted() {
+        this.patient = this.$route.params.value;
+        this.formData.patient = this.patient;
         this.getPatients();
     },
 }

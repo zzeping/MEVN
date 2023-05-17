@@ -73,6 +73,8 @@ export default {
             note: '',
             doc: '',
             blob: '',
+            avg_h: '',
+            avg_q: '',
         };
     },
     props: {
@@ -133,6 +135,8 @@ export default {
             formData1.append('data_type', this.formData.dataType);
             formData1.append('patient', this.formData.patient);
             formData1.append('report', this.blob, 'report.pdf');
+            formData1.append('hamstring', JSON.stringify(JSON.parse(JSON.stringify(this.avg_h))));
+            formData1.append('quadricep', JSON.stringify(JSON.parse(JSON.stringify(this.avg_q))));
             const response = await API.addRecords(formData1);
             const formData2 = new FormData();
             formData2.append('record', response.recordId);
@@ -254,7 +258,7 @@ export default {
                 var fit = model.predict();
                 averagedYh = fit.fitted;
             }
-            let avg_h = averagedXh.map(function (d, i) { return { x: d, y: averagedYh[i] }; });
+            this.avg_h = averagedXh.map(function (d, i) { return { x: d, y: averagedYh[i] }; });
 
             // same for quadriceps
             i = 0;
@@ -297,7 +301,7 @@ export default {
                 var fit = model.predict();
                 averagedYq = fit.fitted;
             }
-            let avg_q = averagedXq.map(function (d, i) { return { x: d, y: averagedYq[i] }; });
+            this.avg_q = averagedXq.map(function (d, i) { return { x: d, y: averagedYq[i] }; });
             var commonX = [];
             var ratio = [];
 
@@ -374,7 +378,7 @@ export default {
                 .attr("fill", "none");
 
             svg1.append("path")
-                .datum(avg_h)
+                .datum(this.avg_h)
                 .attr("d", d3.line()
                     .x(function (d) { return xScale1(d.x); })
                     .y(function (d) { return yScale1(d.y); }))
@@ -409,7 +413,7 @@ export default {
                 .attr("stroke", "#73B9D7")
                 .attr("fill", "none");
             svg2.append("path")
-                .datum(avg_q)
+                .datum(this.avg_q)
                 .attr("d", d3.line()
                     .x(function (d) { return xScale2(d.x); })
                     .y(function (d) { return yScale2(d.y); }))

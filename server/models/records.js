@@ -1,12 +1,17 @@
 const mongoose = require('mongoose');
 
+const dataSchema = mongoose.Schema({
+    x: Number,
+    y: Number
+});
+
 const recordSchema = mongoose.Schema({
     joint: String,
     time: String,
     report: String,
     data_type: String,
-    hamstring_path: String,
-    quadricep_path: String,
+    hamstring: [dataSchema],
+    quadricep: [dataSchema],
     patient: String,
     created: {
         type: Date,
