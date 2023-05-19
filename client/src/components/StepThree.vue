@@ -249,7 +249,7 @@ export default {
                 .attr("cx", (d, i) => x(this.timesArr[i]))
                 .attr("cy", d => y1(d))
                 .attr("r", 3)
-                .attr("stroke", "grey")
+                .attr("stroke", "#cdcdcd")
                 .attr("fill", "none")
                 .on("mouseover", function (d, i) {
                     d3.select(this);
@@ -357,8 +357,8 @@ export default {
                         d3.selectAll(".torques")
                             .attr("stroke", (d, j) => {
                                 if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
-                                    vm.initialStrokeColors[j] = "grey";
-                                    return "grey";
+                                    vm.initialStrokeColors[j] = "#cdcdcd";
+                                    return "#cdcdcd";
                                 } else {
                                     return vm.initialStrokeColors[j];
                                 }
@@ -366,8 +366,8 @@ export default {
                         d3.selectAll(".posAn")
                             .attr("stroke", (d, j) => {
                                 if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
-                                    vm.initialStrokeColors[j] = "grey";
-                                    return "grey";
+                                    vm.initialStrokeColors[j] = "#cdcdcd";
+                                    return "#cdcdcd";
                                 } else {
                                     return vm.initialStrokeColors[j];
                                 }
@@ -375,8 +375,8 @@ export default {
                         d3.selectAll(".velo")
                             .attr("stroke", (d, j) => {
                                 if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
-                                    vm.initialStrokeColors[j] = "grey";
-                                    return "grey";
+                                    vm.initialStrokeColors[j] = "#cdcdcd";
+                                    return "#cdcdcd";
                                 } else {
                                     return vm.initialStrokeColors[j];
                                 }
@@ -468,7 +468,7 @@ export default {
                 .attr("cx", (d, i) => x(this.timesArr[i]))
                 .attr("cy", d => y2(d))
                 .attr("r", 3)
-                .attr("stroke", "grey")
+                .attr("stroke", "#cdcdcd")
                 .attr("fill", "none")
                 .on("mouseover", function (d, i) {
                     d3.select(this);
@@ -576,8 +576,8 @@ export default {
                         d3.selectAll(".torques")
                             .attr("stroke", (d, j) => {
                                 if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
-                                    vm.initialStrokeColors[j] = "grey";
-                                    return "grey";
+                                    vm.initialStrokeColors[j] = "#cdcdcd";
+                                    return "#cdcdcd";
                                 } else {
                                     return vm.initialStrokeColors[j];
                                 }
@@ -585,8 +585,8 @@ export default {
                         d3.selectAll(".posAn")
                             .attr("stroke", (d, j) => {
                                 if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
-                                    vm.initialStrokeColors[j] = "grey";
-                                    return "grey";
+                                    vm.initialStrokeColors[j] = "#cdcdcd";
+                                    return "#cdcdcd";
                                 } else {
                                     return vm.initialStrokeColors[j];
                                 }
@@ -594,8 +594,8 @@ export default {
                         d3.selectAll(".velo")
                             .attr("stroke", (d, j) => {
                                 if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
-                                    vm.initialStrokeColors[j] = "grey";
-                                    return "grey";
+                                    vm.initialStrokeColors[j] = "#cdcdcd";
+                                    return "#cdcdcd";
                                 } else {
                                     return vm.initialStrokeColors[j];
                                 }
@@ -684,7 +684,7 @@ export default {
                 .attr("cx", (d, i) => x(this.timesArr[i]))
                 .attr("cy", d => y3(d))
                 .attr("r", 3)
-                .attr("stroke", "grey")
+                .attr("stroke", "#cdcdcd")
                 .attr("fill", "none")
                 .on("mouseover", function (d, i) {
                     d3.select(this);
@@ -792,8 +792,8 @@ export default {
                         d3.selectAll(".torques")
                             .attr("stroke", (d, j) => {
                                 if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
-                                    vm.initialStrokeColors[j] = "grey";
-                                    return "grey";
+                                    vm.initialStrokeColors[j] = "#cdcdcd";
+                                    return "#cdcdcd";
                                 } else {
                                     return vm.initialStrokeColors[j];
                                 }
@@ -801,8 +801,8 @@ export default {
                         d3.selectAll(".posAn")
                             .attr("stroke", (d, j) => {
                                 if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
-                                    vm.initialStrokeColors[j] = "grey";
-                                    return "grey";
+                                    vm.initialStrokeColors[j] = "#cdcdcd";
+                                    return "#cdcdcd";
                                 } else {
                                     return vm.initialStrokeColors[j];
                                 }
@@ -810,8 +810,8 @@ export default {
                         d3.selectAll(".velo")
                             .attr("stroke", (d, j) => {
                                 if (j >= vm.sectionPoints[section] && j <= vm.sectionPoints[section + 1]) {
-                                    vm.initialStrokeColors[j] = "grey";
-                                    return "grey";
+                                    vm.initialStrokeColors[j] = "#cdcdcd";
+                                    return "#cdcdcd";
                                 } else {
                                     return vm.initialStrokeColors[j];
                                 }

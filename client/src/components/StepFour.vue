@@ -1,8 +1,18 @@
 <template>
     <v-container class="pl-10 pr-10">
-        <v-card class="mb-8 pl-8" height="490px">
+        <v-card class="mb-8 pl-8" height="550px">
             <v-row>
-                <v-col md="9">
+                <v-col md="8" class="pr-7">
+                    <v-select v-model="selectedRecords" @change="select" :items="records" label="Select histories"
+                        item-value="_id" :item-text="concatenatedText" multiple chips class="select-right"> <template
+                            v-slot:selection="{ item, index }">
+                            <v-chip v-if="index < 2">
+                                <span>{{ concatenatedText(item) }}</span>
+                            </v-chip>
+                            <span v-if="index === 2" class="text-grey text-caption align-self-center">
+                                (+{{ selectedRecords.length - 2 }} others)
+                            </span>
+                        </template></v-select>
                     <div ref="pics">
                         <svg ref="chart2"></svg>
                         <svg ref="chart1"></svg>
@@ -11,9 +21,15 @@
 
 
                 </v-col>
-                <v-col md="3">
-                    <v-row class="d-flex justify-center pr-15 pt-10">
-                        <v-textarea v-model="note" rows="8" class="px-3" label="Add Notes" variant="solo"></v-textarea>
+                <v-col md="4">
+                    <v-row class="d-flex justify-center pr-10 pt-10">
+                        <p>The max torque of Quadriceps is {{ this.formData.maxTorque }} at {{ this.formData.maxTorqueAn }}
+                            degree.</p>
+                        <p>The max torque of Hamstring is {{ this.formData.minTorque }} at {{ this.formData.minTorqueAn }}
+                            degree.
+                        </p>
+                        <v-textarea v-model="note" rows="8" class="px-3" label="Add Notes to the report"
+                            variant="solo"></v-textarea>
                         <v-dialog v-model="dialog" width="auto">
                             <template v-slot:activator="{ on, attrs }">
                                 <v-btn rounded outlined color="#0f6e2f" v-bind="attrs" v-on="on">download
@@ -48,7 +64,12 @@
         </v-row>
     </v-container>
 </template>
-
+<style>
+.select-right {
+    /* width: 200px; */
+    margin-left: auto;
+}
+</style>
 <script>
 import * as d3 from "d3";
 import jsPDF from "jspdf";
@@ -75,6 +96,16 @@ export default {
             blob: '',
             avg_h: '',
             avg_q: '',
+            records: [], // Array to store the queried items
+            selectedRecords: [], // Array to store the selected items
+            xScale1: '',
+            xScale2: '',
+            yScale1: '',
+            yScale2: '',
+            svg1: '',
+            svg2: '',
+            colors: ["rgba(77,10,54, 0.8)", "rgba(110,15,78, 0.7)", "rgba(168,111,148, 0.8)", "rgba(226,207,219, 0.9)"],
+
         };
     },
     props: {
@@ -103,14 +134,23 @@ export default {
             if (new_view) {
                 this.formData.maxTorque = Math.max(...this.y_q);
                 this.formData.maxTorqueAn = this.x_q[this.y_q.indexOf(this.formData.maxTorque)];
-                this.formData.minTorque = Math.min(...this.y_h);
+                this.formData.minTorque = Math.max(...this.y_h);
                 this.formData.minTorqueAn = this.x_h[this.y_h.indexOf(this.formData.minTorque)];
                 this.loadResult();
             }
         },
     },
+    computed: {
+        concatenatedText() {
+            return record => {
+                let firstName = this.getFirstName(record.patient);
+                return `${firstName} - ${record.joint} ${record.time}`;
+            };
+        },
+    },
     async created() {
         this.patients = await API.getAllPatient();
+        this.records = await API.getAllRecord();
     },
     methods: {
         previousStep() {
@@ -121,6 +161,54 @@ export default {
                 this.auto();
             }
 
+        },
+
+        async select() {
+            if (this.selectedRecords.length > 4) {
+                this.selectedRecords = this.selectedRecords.slice(0, 4);
+            }
+            console.log(this.selectedRecords)
+            d3.selectAll(".add").remove();
+            let record = '';
+            let records = [];
+            let color = '';
+            for (let e of this.selectedRecords) {
+                record = await API.getRecordByID(e);
+                records.push(record);
+            }
+            const customComparator = (a, b) => {
+                const timeA = new Date(a.time.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$2/$1/$3"));
+                const timeB = new Date(b.time.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$2/$1/$3"));
+                return timeB - timeA;
+            };
+            let sortedRecords = records.sort(customComparator);
+            for (let i = 0; i < sortedRecords.length; i++) {
+                color = this.colors[i % this.colors.length];
+                this.svg1.append("path")
+                    .datum(sortedRecords[i].hamstring)
+                    .attr("d", d3.line()
+                        .x(d => this.xScale1(d.x))
+                        .y(d => this.yScale1(d.y)))
+                    .attr("stroke", color)
+                    .attr("stroke-width", 4)
+                    .attr("fill", "none")
+                    .attr("class", "add");
+                this.svg2.append("path")
+                    .datum(sortedRecords[i].quadricep)
+                    .attr("d", d3.line()
+                        .x(d => this.xScale2(d.x))
+                        .y(d => this.yScale2(d.y)))
+                    .attr("stroke", color)
+                    .attr("stroke-width", 4)
+                    .attr("fill", "none")
+                    .attr("class", "add");;
+            }
+
+        },
+        getFirstName(patientId) {
+            const targetPatient = this.patients.find(obj => obj._id === patientId);
+            if (targetPatient == undefined) return 'Unknown';
+            return targetPatient.firstName || 'Unknown';
         },
         clearChart() {
             d3.select(this.$refs.chart1).selectAll('g').remove();
@@ -181,7 +269,7 @@ export default {
             pdfDoc.text(`The max torque is ${this.formData.maxTorque} at ${this.formData.maxTorqueAn} degree.`, 131, 109);
 
             pdfDoc.text("Hamstring max point:", 131, 137);
-            pdfDoc.text(`The max torque is ${this.formData.minTorque} at ${this.formData.minTorqueAn} degree.`, 131, 142);
+            pdfDoc.text(`The min torque is ${this.formData.minTorque} at ${this.formData.minTorqueAn} degree.`, 131, 142);
 
             pdfDoc.line(20, 200, pageWidth - 20, 200);
             pdfDoc.setFont('helvetica', 'bold');
@@ -315,16 +403,16 @@ export default {
 
             // set the size and padding of the chart
             const margin = { top: 10, right: 20, bottom: 30, left: 50 };
-            const width = 700 - margin.left - margin.right;
-            const height = 150 - margin.top - margin.bottom;
+            const width = 650 - margin.left - margin.right;
+            const height = 130 - margin.top - margin.bottom;
 
-            const svg1 = d3.select(this.$refs.chart1)
+            this.svg1 = d3.select(this.$refs.chart1)
                 .attr('width', width + margin.left + margin.right)
                 .attr('height', height + margin.top + margin.bottom)
                 .append('g')
                 .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-            const svg2 = d3.select(this.$refs.chart2)
+            this.svg2 = d3.select(this.$refs.chart2)
                 .attr('width', width + margin.left + margin.right)
                 .attr('height', height + margin.top + margin.bottom)
                 .append('g')
@@ -337,28 +425,28 @@ export default {
                 .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
             // create the scales for x and y axis
-            const xScale1 = d3.scaleLinear().domain([d3.min(this.x_h), d3.max(this.x_h)]).range([0, width]);
-            const yScale1 = d3.scaleLinear().domain([d3.min(this.y_h), d3.max(this.y_h)]).range([height, 0]);
-            const xScale2 = d3.scaleLinear().domain([d3.min(this.x_q), d3.max(this.x_q)]).range([0, width]);
-            const yScale2 = d3.scaleLinear().domain([d3.min(this.y_q), d3.max(this.y_q)]).range([height, 0]);
+            this.xScale1 = d3.scaleLinear().domain([d3.min(this.x_h), d3.max(this.x_h)]).range([0, width]);
+            this.yScale1 = d3.scaleLinear().domain([d3.min(this.y_h), d3.max(this.y_h)]).range([height, 0]);
+            this.xScale2 = d3.scaleLinear().domain([d3.min(this.x_q), d3.max(this.x_q)]).range([0, width]);
+            this.yScale2 = d3.scaleLinear().domain([d3.min(this.y_q), d3.max(this.y_q)]).range([height, 0]);
             const xScale3 = d3.scaleLinear().domain([d3.min(commonX), d3.max(commonX)]).range([0, width]);
             const yScale3 = d3.scaleLinear().domain([d3.min(ratio), d3.max(ratio)]).range([height, 0]);
 
             // create the axes for x and y
-            const xAxis1 = d3.axisBottom(xScale1);
-            const yAxis1 = d3.axisLeft(yScale1);
-            const xAxis2 = d3.axisBottom(xScale2);
-            const yAxis2 = d3.axisLeft(yScale2);
+            const xAxis1 = d3.axisBottom(this.xScale1);
+            const yAxis1 = d3.axisLeft(this.yScale1);
+            const xAxis2 = d3.axisBottom(this.xScale2);
+            const yAxis2 = d3.axisLeft(this.yScale2);
 
 
             // add the x and y axes to the chart
-            svg1.append('g').attr('class', 'x axis').attr('transform', `translate(0,${height})`).call(xAxis1).append("text")
+            this.svg1.append('g').attr('class', 'x axis').attr('transform', `translate(0,${height})`).call(xAxis1).append("text")
                 .style("fill", "black")
                 .attr('text-anchor', 'end')
                 .attr('x', width)
                 .attr('y', margin.bottom - 3)
                 .text('Angle (degree)');
-            svg1.append('g').attr('class', 'y axis').call(yAxis1).append("text")
+            this.svg1.append('g').attr('class', 'y axis').call(yAxis1).append("text")
                 .attr("text-anchor", "end")
                 .attr("transform", "rotate(-90)")
                 .attr("y", -margin.left + 20)
@@ -367,33 +455,35 @@ export default {
                 .text("Hamstrings Torque (N*m)");
 
             // add the scatter points to the chart
-            svg1.selectAll('circle')
-                .data(this.x_h)
-                .enter()
-                .append('circle')
-                .attr('cx', (d, i) => xScale1(this.x_h[i]))
-                .attr('cy', (d, i) => yScale1(this.y_h[i]))
-                .attr('r', 2)
-                .attr("stroke", "#73B9D7")
-                .attr("fill", "none");
+            // svg1.selectAll('circle')
+            //     .data(this.x_h)
+            //     .enter()
+            //     .append('circle')
+            //     .attr('cx', (d, i) => xScale1(this.x_h[i]))
+            //     .attr('cy', (d, i) => yScale1(this.y_h[i]))
+            //     .attr('r', 2)
+            //     .attr("stroke", "#73B9D7")
+            //     .attr("fill", "none");
 
-            svg1.append("path")
+            this.svg1.append("path")
                 .datum(this.avg_h)
                 .attr("d", d3.line()
-                    .x(function (d) { return xScale1(d.x); })
-                    .y(function (d) { return yScale1(d.y); }))
-                .attr("stroke", "black")
-                .attr("stroke-width", 1)
+                    .x(d => this.xScale1(d.x))
+                    .y(d => this.yScale1(d.y))
+                )
+                .attr("stroke", "rgba(7,55,23,0.8)")
+                .attr("stroke-width", 3)
                 .attr("fill", "none");
 
+
             // add the x and y axes to the chart
-            svg2.append('g').attr('class', 'x axis').attr('transform', `translate(0,${height})`).call(xAxis2).append("text")
+            this.svg2.append('g').attr('class', 'x axis').attr('transform', `translate(0,${height})`).call(xAxis2).append("text")
                 .style("fill", "black")
                 .attr('text-anchor', 'end')
                 .attr('x', width)
                 .attr('y', margin.bottom - 3)
                 .text('Angle (degree)');
-            svg2.append('g').attr('class', 'y axis').call(yAxis2).append("text")
+            this.svg2.append('g').attr('class', 'y axis').call(yAxis2).append("text")
                 .attr("text-anchor", "end")
                 .attr("transform", "rotate(-90)")
                 .attr("y", -margin.left + 20)
@@ -402,27 +492,27 @@ export default {
                 .text("Quadricep Torque (N*m)");
 
             // add the scatter points to the chart
-            svg2
-                .selectAll('circle')
-                .data(this.x_q)
-                .enter()
-                .append('circle')
-                .attr('cx', (d, i) => xScale2(this.x_q[i]))
-                .attr('cy', (d, i) => yScale2(this.y_q[i]))
-                .attr('r', 2)
-                .attr("stroke", "#73B9D7")
-                .attr("fill", "none");
-            svg2.append("path")
+            // svg2
+            //     .selectAll('circle')
+            //     .data(this.x_q)
+            //     .enter()
+            //     .append('circle')
+            //     .attr('cx', (d, i) => xScale2(this.x_q[i]))
+            //     .attr('cy', (d, i) => yScale2(this.y_q[i]))
+            //     .attr('r', 2)
+            //     .attr("stroke", "#73B9D7")
+            //     .attr("fill", "none");
+            this.svg2.append("path")
                 .datum(this.avg_q)
                 .attr("d", d3.line()
-                    .x(function (d) { return xScale2(d.x); })
-                    .y(function (d) { return yScale2(d.y); }))
-                .attr("stroke", "black")
-                .attr("stroke-width", 1)
+                    .x(d => this.xScale2(d.x))
+                    .y(d => this.yScale2(d.y)))
+                .attr("stroke", "rgba(7,55,23,0.8)")
+                .attr("stroke-width", 4)
                 .attr("fill", "none");
-            d3.select(this.$refs.chart2)
-                .node()
-                .appendChild(svg2.node());
+            // d3.select(this.$refs.chart2)
+            //     .node()
+            //     .appendChild(this.svg2.node());
 
             // add the line to the SVG element
             svg3.append("path")
@@ -430,8 +520,8 @@ export default {
                 .attr("d", d3.line()
                     .x(function (d, i) { return xScale3(commonX[i]); })
                     .y(function (d, i) { return yScale3(ratio[i]); }))
-                .attr("stroke", "black")
-                .attr("stroke-width", 1)
+                .attr("stroke", "rgba(7,55,23,0.8)")
+                .attr("stroke-width", 4)
                 .attr("fill", "none");
 
             // add the x-axis
